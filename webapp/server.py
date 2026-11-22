@@ -197,7 +197,8 @@ class Handler(BaseHTTPRequestHandler):
             if SYSTEM and messages[0].get("role") != "system":
                 messages = [{"role": "system", "content": SYSTEM}, *messages]
             body = {"model": str(full_models()[which]) if which != "gemma" else upstream_model(), "messages": messages, "stream": True,
-                    "max_tokens": max_tokens, "temperature": temperature}
+                    "max_tokens": max_tokens, "temperature": temperature,
+                    "repetition_penalty": 1.1}  # the small fine-tuned model can loop ("syntaxe syntaxe ..."); vLLM and mlx_lm accept it
             with upstream("/chat/completions", body) as r:
                 self._sse_start()
                 if method != "off":

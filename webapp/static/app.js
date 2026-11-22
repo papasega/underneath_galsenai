@@ -6,7 +6,8 @@ let history = [], busy = false, models = [];
 fetch("/api/config").then(r => r.json()).then(c => {
   models = c.models;
   models.forEach(m => picker.add(new Option(m.name + (m.available ? "" : " (indisponible)"), m.id)));
-  picker.value = c.default; showDetail();
+  const kept = sessionStorage.getItem("model");   // reset() reloads the page: keep the chosen model
+  picker.value = models.some(m => m.id === kept) ? kept : c.default; showDetail();
 });
 function showDetail() { const m = models.find(x => x.id === picker.value); detail.textContent = m ? m.detail : ""; }
 picker.onchange = () => { showDetail(); reset(); };
@@ -106,6 +107,8 @@ async function ask(text) {
       }
     }
     history.push({ role: "assistant", content: answer });
+    const rag = document.getElementById("rag").value;   // which model/RAG produced this answer
+    const by = mk("div", `${picker.selectedOptions[0].text}${rag !== "off" ? " · RAG " + rag : ""}`); by.className = "by"; bubble.append(by);
     if (sources.length) {
       const d = document.createElement("details"); d.className = "sources";
       d.append(mk("summary", `Sources (${sources.length})`));
@@ -126,5 +129,5 @@ form.addEventListener("submit", e => { e.preventDefault(); const t = input.value
 input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
 input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = input.scrollHeight + "px"; });
 document.querySelectorAll("#themes li").forEach(li => li.onclick = () => submit(li.dataset.q));  // the model answers a natural question
-function reset() { history = []; location.reload(); }
+function reset() { sessionStorage.setItem("model", picker.value); history = []; location.reload(); }
 document.getElementById("clear").onclick = reset;
