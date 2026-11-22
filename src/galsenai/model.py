@@ -1,4 +1,4 @@
-"""Compact decoder-only transformer: RMSNorm, RoPE, grouped-query attention, SwiGLU.
+"""Compact decoder-only transformer: RMSNorm, RoPE, grouped-query attention, SwiGLU (or nanochat's relu^2).
 
 Structure follows nanoGPT (one config, fused QKV, ``scaled_dot_product_attention``,
 tied embeddings) with the components on-device models such as Gemma rely on, plus a
@@ -45,6 +45,7 @@ class Attention(nn.Module):
         self.window, self.dropout = window, cfg.dropout
         self.qkv = nn.Linear(cfg.n_embd, (cfg.n_head + 2 * cfg.n_kv_head) * cfg.head_dim, bias=False)
         self.proj = nn.Linear(cfg.n_head * cfg.head_dim, cfg.n_embd, bias=False)
+        self.qk_norm, self.eps = cfg.qk_norm, cfg.norm_eps
 
     def forward(self, x: Tensor, cos: Tensor, sin: Tensor, past: KVCache | None) -> tuple[Tensor, KVCache]:
         B, T, _ = x.shape
@@ -55,6 +56,8 @@ class Attention(nn.Module):
         k = k.view(B, T, self.n_kv_head, self.head_dim).transpose(1, 2)
         v = v.view(B, T, self.n_kv_head, self.head_dim).transpose(1, 2)
         q, k = apply_rotary(q, cos, sin), apply_rotary(k, cos, sin)
+        if self.qk_norm:
+            q, k = F.rms_norm(q, (self.head_dim,), eps=self.eps), F.rms_norm(k, (self.head_dim,), eps=self.eps)
 
         offset = 0
         if past is not None:
@@ -91,13 +94,30 @@ class SwiGLU(nn.Module):
         return self.drop(self.down(F.silu(self.gate(x)) * self.up(x)))
 
 
+class ReLU2(nn.Module):
+    """nanochat's MLP: down(relu(up(x))**2). Same attribute names as SwiGLU so init rules apply."""
+
+    def __init__(self, cfg: ModelConfig) -> None:
+        super().__init__()
+        self.up = nn.Linear(cfg.n_embd, cfg.hidden_dim, bias=False)
+        self.down = nn.Linear(cfg.hidden_dim, cfg.n_embd, bias=False)
+        self.drop = nn.Dropout(cfg.dropout)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.drop(self.down(F.relu(self.up(x)).square()))
+
+
+def make_norm(cfg: ModelConfig) -> nn.RMSNorm:
+    return nn.RMSNorm(cfg.n_embd, eps=cfg.norm_eps, elementwise_affine=cfg.norm_affine)
+
+
 class Block(nn.Module):
     def __init__(self, cfg: ModelConfig, layer: int) -> None:
         super().__init__()
-        self.norm1 = nn.RMSNorm(cfg.n_embd, eps=cfg.norm_eps)
+        self.norm1 = make_norm(cfg)
         self.attn = Attention(cfg, cfg.window_for_layer(layer))
-        self.norm2 = nn.RMSNorm(cfg.n_embd, eps=cfg.norm_eps)
-        self.mlp = SwiGLU(cfg)
+        self.norm2 = make_norm(cfg)
+        self.mlp = ReLU2(cfg) if cfg.mlp == "relu2" else SwiGLU(cfg)
 
     def forward(self, x: Tensor, cos: Tensor, sin: Tensor, past: KVCache | None) -> tuple[Tensor, KVCache]:
         h, cache = self.attn(self.norm1(x), cos, sin, past)
@@ -112,11 +132,15 @@ class GPT(nn.Module):
         self.tok_emb = nn.Embedding(cfg.vocab_size, cfg.n_embd)
         self.drop = nn.Dropout(cfg.dropout)
         self.blocks = nn.ModuleList(Block(cfg, i) for i in range(cfg.n_layer))
-        self.norm = nn.RMSNorm(cfg.n_embd, eps=cfg.norm_eps)
+        self.norm = make_norm(cfg)
         self.lm_head = nn.Linear(cfg.n_embd, cfg.vocab_size, bias=False)
         if cfg.tie_embeddings:
             self.lm_head.weight = self.tok_emb.weight
         self.apply(self._init_weights)
+        if cfg.layer_lambdas:  # nanochat init: residual scale 1.15 -> 1.05, x0 skip 0.20 -> 0.05 with depth
+            frac = torch.linspace(0, 1, cfg.n_layer)
+            self.resid_lambdas = nn.Parameter(1.15 - 0.10 * frac)
+            self.x0_lambdas = nn.Parameter(0.20 - 0.15 * frac)
         # GPT-2 scaling keeps the residual stream variance stable as depth grows.
         for name, p in self.named_parameters():
             if name.endswith(("attn.proj.weight", "mlp.down.weight")):
@@ -140,12 +164,16 @@ class GPT(nn.Module):
             torch.arange(offset, offset + T, device=idx.device), self.cfg.head_dim, self.cfg.rope_base
         )
 
-        x = self.drop(self.tok_emb(idx))
+        x = x0 = self.drop(self.tok_emb(idx))
         cache: list[KVCache] = []
         for i, block in enumerate(self.blocks):
+            if self.cfg.layer_lambdas:
+                x = self.resid_lambdas[i] * x + self.x0_lambdas[i] * x0
             x, kv = block(x, cos, sin, None if past is None else past[i])
             cache.append(kv)
         logits = self.lm_head(self.norm(x))
+        if (c := self.cfg.logit_softcap) is not None:
+            logits = c * torch.tanh(logits.float() / c)
 
         loss = None
         if targets is not None:

@@ -11,13 +11,13 @@ fine_tune_type: lora        # lora | dora | full
 mask_prompt: true           # loss on assistant tokens only
 seed: 0
 
-batch_size: 4
+batch_size: 2
 learning_rate: 1.0e-4
 max_seq_length: 1024        # longest conversation is about 620 tokens
-num_layers: -1              # -1 = LoRA on all layers
+num_layers: 16              # top 16 layers get LoRA (-1 = all layers: tested, degraded the model)
 grad_checkpoint: true       # keep true: without it rank 64 / batch 8 runs out of Metal memory on 24 GB
 
 lora_parameters:
-  rank: 32                  # tested up to 128 with batch 8 and grad_checkpoint without error
+  rank: 8                   # rank 32 + all layers + lr 1e-4 diverged (val loss 3.7 -> 6.6)
   scale: 20.0
-  dropout: 0.05
+  dropout: 0.0

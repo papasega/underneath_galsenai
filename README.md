@@ -46,6 +46,20 @@ The structure (one config, fused QKV, `scaled_dot_product_attention`) follows
 GPT-2 components (LayerNorm, learned positions, GELU, full multi-head attention). This package keeps its
 compactness but uses the components on-device models rely on.
 
+## nanochat-style variant, SFT and evaluation
+
+`ModelConfig.nanochat(vocab_size, ...)` switches on the parts of [nanochat](https://github.com/karpathy/nanochat)'s GPT:
+relu² MLP, QK-norm, parameter-free RMSNorm, untied embeddings, logit soft-cap 15, RoPE base 1e5, SSSL sliding windows,
+per-layer residual/x0 lambdas. Not ported: value embeddings, smear gate, FP8, flash-attention, the Muon optimizer (AdamW is used).
+The chat format is nanochat's (`<|bos|>`, `<|user_start|>`, `<|assistant_start|>`...; loss on assistant tokens only).
+
+```
+python3 scripts/anonymize_chat.py CHAT.txt data/private/chat_anonymized.txt   # corpus for the tokenizer and base stage
+python3 scripts/train_tokenizer.py && python -m galsenai.train --stage base && python -m galsenai.train --stage sft  # config_nanochat.yml
+./scripts/train_lora.sh                                                       # Gemma 4 E2B LoRA, config_gemma.yml
+./scripts/run_eval.sh                                                         # writes results/eval_compare.md
+```
+
 ## Tests
 
 `tests/` checks properties, not implementation: causality, KV-cache equals full forward (full, GQA, MQA, sliding

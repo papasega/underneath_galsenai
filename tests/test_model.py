@@ -35,7 +35,14 @@ def test_causality_future_tokens_do_not_change_past_logits() -> None:
 
 
 @pytest.mark.parametrize(
-    "overrides", [{}, {"sliding_window": 4, "global_every": 2}, {"n_kv_head": 4}, {"n_kv_head": 1}]
+    "overrides",
+    [
+        {},
+        {"sliding_window": 4, "global_every": 2},
+        {"n_kv_head": 4},
+        {"n_kv_head": 1},
+        {"mlp": "relu2", "qk_norm": True, "norm_affine": False, "layer_lambdas": True, "logit_softcap": 15.0},
+    ],
 )
 def test_kv_cache_matches_full_forward(overrides: dict[str, int]) -> None:
     model = make(**overrides)
@@ -187,3 +194,28 @@ def test_lora_starts_as_identity_and_trains_only_adapters() -> None:
     assert 0 < trainable < 0.2 * total
     assert all(("lora_" in n) == p.requires_grad for n, p in lora.named_parameters())
     assert all(p.requires_grad for p in base.parameters())  # the original model is untouched
+
+
+def nano() -> GPT:
+    return GPT(ModelConfig.nanochat(**{k: v for k, v in TINY.items() if k not in ("n_kv_head",)} | {"sliding_window": 4})).eval()
+
+
+def test_nanochat_preset_has_its_distinguishing_parts() -> None:
+    model = nano()
+    names = {n for n, _ in model.named_parameters()}
+    assert model.cfg.n_kv_head == model.cfg.n_head and model.lm_head.weight is not model.tok_emb.weight
+    assert {"resid_lambdas", "x0_lambdas"} <= names and not any("norm" in n for n in names)  # parameter-free norms
+    assert model.blocks[0].mlp.up.out_features == 4 * model.cfg.n_embd
+    assert model(torch.randint(0, 50, (1, 8))).logits.abs().max() <= model.cfg.logit_softcap  # soft-cap bound
+
+
+def test_nanochat_variant_memorizes_a_short_sequence() -> None:
+    model = nano().train()
+    ids = torch.randint(0, 50, (1, 17))
+    opt = torch.optim.AdamW(model.parameters(), lr=3e-3)
+    for _ in range(150):
+        loss = model(ids[:, :-1], ids[:, 1:]).loss
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+    assert loss.item() < 0.3
