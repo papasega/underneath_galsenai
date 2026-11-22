@@ -9,24 +9,25 @@
 <body>
   <header>
     <img src="/logo.svg" alt="GalsenAI" class="logo">
-    <span id="model" class="model"></span>
+    <select id="model" aria-label="Modèle"></select>
+    <span id="detail" class="model"></span>
     <button id="clear" class="ghost" title="Nouvelle conversation">Nouveau</button>
   </header>
   <div class="layout">
     <aside>
       <h2>Thématiques du groupe</h2>
       <ul id="themes">
-        <li>LLM et modèles (GPT, Claude, Gemini, Gemma…)</li>
-        <li>Agents, outils et assistants de code</li>
-        <li>Entraînement, fine-tuning et RL</li>
-        <li>NLP et langues locales (wolof…)</li>
-        <li>Python, code et développement</li>
-        <li>Maths, théorie et recherche</li>
-        <li>Infra, GPU et calcul</li>
-        <li>Carrière, emploi et études</li>
-        <li>Événements et communauté au Sénégal</li>
+        <li data-q="Quel modèle choisir pour coder : GPT, Claude ou Gemini ?">LLM et modèles (GPT, Claude, Gemini, Gemma…)</li>
+        <li data-q="Comment fonctionne un agent IA qui utilise des outils ?">Agents, outils et assistants de code</li>
+        <li data-q="Comment faire du fine-tuning d'un petit modèle ?">Entraînement, fine-tuning et RL</li>
+        <li data-q="Comment faire du NLP en wolof ?">NLP et langues locales (wolof…)</li>
+        <li data-q="Quel niveau de Python pour le deep learning ?">Python, code et développement</li>
+        <li data-q="Quelles maths faut-il pour comprendre les transformers ?">Maths, théorie et recherche</li>
+        <li data-q="Quel GPU choisir pour entraîner un modèle ?">Infra, GPU et calcul</li>
+        <li data-q="Comment commencer une carrière en IA au Sénégal ?">Carrière, emploi et études</li>
+        <li data-q="Quelles communautés IA existent au Sénégal ?">Événements et communauté au Sénégal</li>
       </ul>
-      <p class="hint">Cliquez sur un thème pour poser une question.</p>
+      <p class="hint">Cliquez sur un thème : le modèle répond à une question type.</p>
     </aside>
     <div class="chat">
       <main id="log" aria-live="polite">

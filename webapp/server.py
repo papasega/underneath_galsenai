@@ -1,24 +1,34 @@
-"""GalsenAI chat web app: static UI + streaming proxy to any OpenAI-compatible server (vLLM, mlx_lm.server).
+"""GalsenAI chat web app: static UI + two selectable models.
 
-    VLLM_BASE_URL=http://localhost:8000/v1 python3 webapp/server.py [--port 8080]
+  galsenai-gemma     streaming proxy to an OpenAI-compatible server (vLLM, mlx_lm.server)
+  galsenai-nanochat  the 12M nanochat-style checkpoint, generated in-process (needs the project venv)
 
-Standard library only. Env: VLLM_BASE_URL, MODEL (default: first model the server lists),
-SYSTEM_PROMPT, API_KEY (sent as Bearer if set).
+    VLLM_BASE_URL=http://localhost:8000/v1 .venv/bin/python webapp/server.py [--port 8080]
+
+Env: VLLM_BASE_URL, MODEL (upstream model name, default: first one listed), ACTIVE_MODEL (name shown in the UI),
+SYSTEM_PROMPT, API_KEY (Bearer), NANOCHAT_CHECKPOINT, NANOCHAT_TOKENIZER.
 """
 
 import argparse
 import json
 import os
+import sys
+import threading
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
 STATIC = Path(__file__).parent / "static"
 BASE = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1").rstrip("/")
 SYSTEM = os.environ.get("SYSTEM_PROMPT", "")
+NANO_CKPT = Path(os.environ.get("NANOCHAT_CHECKPOINT", ROOT / "data/private/checkpoints/galsenai_sft.pt"))
+NANO_TOK = Path(os.environ.get("NANOCHAT_TOKENIZER", ROOT / "data/private/galsenai_tok/galsenai.model"))
 TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml"}
 MAX_BODY = 1_000_000
+_nano: dict = {}
+_nano_lock = threading.Lock()
 
 
 def upstream(path: str, body: dict | None = None):
@@ -29,14 +39,68 @@ def upstream(path: str, body: dict | None = None):
     return urllib.request.urlopen(urllib.request.Request(BASE + path, data, headers), timeout=300)
 
 
-def model_name() -> str:
+def upstream_model() -> str:
     if name := os.environ.get("MODEL"):
         return name
     with upstream("/models") as r:
         return json.load(r)["data"][0]["id"]
 
 
+def gemma_info() -> dict:
+    """Name shown in the UI. mlx_lm.server calls its preloaded model "default_model": show the real one instead."""
+    try:
+        real = upstream_model()
+        detail = os.environ.get("ACTIVE_MODEL") or (real if real != "default_model" else "modèle actif")
+        return {"id": "gemma", "name": "galsenai-gemma", "detail": detail, "available": True}
+    except (urllib.error.URLError, OSError, KeyError, IndexError):
+        return {"id": "gemma", "name": "galsenai-gemma", "detail": f"serveur injoignable ({BASE})", "available": False}
+
+
+def nanochat_info() -> dict:
+    ok = NANO_CKPT.is_file() and NANO_TOK.is_file()
+    return {"id": "nanochat", "name": "galsenai-nanochat", "available": ok,
+            "detail": "modèle de 12 M de paramètres, style nanochat" if ok else "checkpoint introuvable"}
+
+
+def nano_stream(messages: list[dict], max_tokens: int, temperature: float):
+    """Yield text deltas from the nanochat-style model (loaded on first use, one request at a time)."""
+    with _nano_lock:
+        if not _nano:
+            sys.path.insert(0, str(ROOT / "src"))
+            sys.path.insert(0, str(ROOT))
+            import torch
+            from galsenai.chat import ASSISTANT_END, encode_prompt, load_tokenizer
+            from galsenai.checkpoint import load_checkpoint
+            _nano.update(torch=torch, encode=encode_prompt, stop=ASSISTANT_END, tok=load_tokenizer(NANO_TOK),
+                         model=load_checkpoint(NANO_CKPT, "cpu").eval())
+        torch, model, tok = _nano["torch"], _nano["model"], _nano["tok"]
+        block = model.cfg.block_size
+        ids = _nano["encode"](tok, messages)
+        while len(ids) > block - max_tokens and len(messages) > 1:  # drop the oldest turn pair
+            messages = messages[2:]
+            ids = _nano["encode"](tok, messages)
+        stop, gen, sent = tok.special_tokens[_nano["stop"]], [], ""
+        with torch.inference_mode():
+            out = model(torch.tensor([ids]))
+            for _ in range(min(max_tokens, block - len(ids))):
+                logits = out.logits[0, -1] / max(temperature, 1e-4)
+                top = torch.topk(logits, 50)
+                nxt = top.indices[torch.multinomial(top.values.softmax(-1), 1)].item()
+                if nxt == stop:
+                    break
+                gen.append(nxt)
+                text = tok.decode(gen)
+                if not text.endswith("�") and len(text) > len(sent):  # wait for complete UTF-8 characters
+                    yield text[len(sent):]
+                    sent = text
+                out = model(torch.tensor([[nxt]]), past=out.past)
+
+
 class Handler(BaseHTTPRequestHandler):
+    def log_message(self, fmt: str, *args) -> None:  # quieter console
+        if "/api/chat" in fmt % args:
+            super().log_message(fmt, *args)
+
     def _send(self, code: int, body: bytes, ctype: str = "application/json") -> None:
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -49,16 +113,20 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/api/config":
-            try:
-                self._send(200, json.dumps({"model": model_name(), "system": SYSTEM}).encode())
-            except (urllib.error.URLError, OSError, KeyError, IndexError) as e:
-                self._error(502, f"Serveur d'inférence injoignable ({BASE}). Lancez ./scripts/serve.sh, ou démarrez vLLM / mlx_lm.server puis VLLM_BASE_URL. Détail : {e}")
-            return
+            models = [gemma_info(), nanochat_info()]
+            default = next((m["id"] for m in models if m["available"]), "gemma")
+            return self._send(200, json.dumps({"models": models, "default": default, "system": SYSTEM}).encode())
         rel = "index.html" if self.path in ("/", "") else self.path.lstrip("/").split("?")[0]
         f = (STATIC / rel).resolve()
         if STATIC.resolve() not in f.parents or not f.is_file():
             return self._error(404, "not found")
         self._send(200, f.read_bytes(), TYPES.get(f.suffix, "application/octet-stream"))
+
+    def _sse_start(self) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
 
     def do_POST(self) -> None:
         if self.path != "/api/chat":
@@ -70,34 +138,66 @@ class Handler(BaseHTTPRequestHandler):
             req = json.loads(self.rfile.read(n))
             messages = req["messages"]
             assert isinstance(messages, list) and messages
+            which = req.get("model", "gemma")
+            assert which in ("gemma", "nanochat")
+            max_tokens = min(int(req.get("max_tokens", 512)), 2048)
+            temperature = float(req.get("temperature", 0.7))
         except (ValueError, KeyError, AssertionError):
-            return self._error(400, "expected {messages: [...]}")
-        body = {
-            "model": model_name(),
-            "messages": messages,
-            "stream": True,
-            "max_tokens": min(int(req.get("max_tokens", 512)), 2048),
-            "temperature": float(req.get("temperature", 0.7)),
-        }
+            return self._error(400, "expected {messages: [...], model: 'gemma'|'nanochat'}")
         try:
+            if which == "nanochat":
+                self._nanochat(messages, max_tokens, temperature)
+            else:
+                self._gemma(messages, max_tokens, temperature)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # the browser closed the stream
+
+    def _nanochat(self, messages: list[dict], max_tokens: int, temperature: float) -> None:
+        if not nanochat_info()["available"]:
+            return self._error(503, f"checkpoint introuvable : {NANO_CKPT}")
+        try:
+            gen = nano_stream(messages, max_tokens, temperature)
+            first = next(gen, "")
+        except ValueError as e:
+            return self._error(400, str(e))
+        self._sse_start()
+        for piece in [first, *gen]:
+            chunk = {"choices": [{"index": 0, "delta": {"content": piece}, "finish_reason": None}]}
+            self.wfile.write(b"data: " + json.dumps(chunk).encode() + b"\n\n")
+            self.wfile.flush()
+        self.wfile.write(b"data: [DONE]\n\n")
+
+    def _gemma(self, messages: list[dict], max_tokens: int, temperature: float) -> None:
+        try:
+            body = {"model": upstream_model(), "messages": messages, "stream": True,
+                    "max_tokens": max_tokens, "temperature": temperature}
             with upstream("/chat/completions", body) as r:
-                self.send_response(200)
-                self.send_header("Content-Type", "text/event-stream")
-                self.send_header("Cache-Control", "no-cache")
-                self.end_headers()
+                self._sse_start()
                 while chunk := r.readline():
                     self.wfile.write(chunk)
                     self.wfile.flush()
         except urllib.error.HTTPError as e:
             self._error(e.code, e.read().decode(errors="replace")[:500])
         except (urllib.error.URLError, OSError) as e:
-            self._error(502, f"Serveur d'inférence injoignable ({BASE}). Lancez ./scripts/serve.sh, ou démarrez vLLM / mlx_lm.server puis VLLM_BASE_URL. Détail : {e}")
+            self._error(502, f"Serveur d'inférence injoignable ({BASE}). Lancez ./scripts/serve.sh ou vLLM / "
+                             f"mlx_lm.server puis VLLM_BASE_URL. Détail : {e}")
 
 
-if __name__ == "__main__":
+def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8080)
     a = ap.parse_args()
-    print(f"GalsenAI chat on http://{a.host}:{a.port}  ->  {BASE}")
-    ThreadingHTTPServer((a.host, a.port), Handler).serve_forever()
+    server = ThreadingHTTPServer((a.host, a.port), Handler)
+    print(f"GalsenAI chat on http://{a.host}:{a.port}  (Ctrl-C pour arrêter)")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nArrêt du serveur.")
+    finally:
+        server.server_close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

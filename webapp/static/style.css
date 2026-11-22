@@ -45,3 +45,26 @@ textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px #31ad4833; }
 #send:hover { background: var(--green); }
 #send:disabled { background: #bfc5c5; cursor: not-allowed; }
 @media (max-width: 800px) { aside { display: none; } }
+
+/* model picker */
+select { background: #ffffff22; color: #fff; border: 1px solid #ffffff80; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; }
+select option { color: var(--ink); }
+.model { flex: 1; }
+/* ChatGPT-like answers: assistant text plain on white, user in a soft bubble, rendered markdown */
+.assistant .bubble { background: none; border: 0; padding: 0 4px; max-width: 100%; white-space: normal; }
+.user .bubble { background: var(--soft); color: var(--ink); border: 1px solid var(--line); }
+.bubble p { margin: 0 0 10px; }
+.bubble p:last-child, .bubble ul:last-child, .bubble ol:last-child { margin-bottom: 0; }
+.bubble h1, .bubble h2, .bubble h3, .bubble h4 { font-family: var(--display); margin: 14px 0 6px; line-height: 1.25; }
+.bubble h1 { font-size: 1.3em; } .bubble h2 { font-size: 1.18em; } .bubble h3, .bubble h4 { font-size: 1.05em; }
+.bubble ul, .bubble ol { margin: 0 0 10px; padding-left: 1.4em; }
+.bubble li { margin: 3px 0; }
+.bubble li::marker { color: var(--green-dark); }
+.bubble code { background: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font: 0.88em ui-monospace, Menlo, monospace; }
+.bubble pre code { background: none; border: 0; padding: 0; color: inherit; }
+.bubble blockquote { margin: 0 0 10px; padding: 2px 12px; border-left: 3px solid var(--green); color: var(--muted); }
+.bubble hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+.bubble a { color: var(--green-dark); }
+.bubble table { border-collapse: collapse; margin: 0 0 10px; font-size: 14px; }
+.bubble th, .bubble td { border: 1px solid var(--line); padding: 5px 10px; text-align: left; }
+.bubble th { background: var(--soft); }
