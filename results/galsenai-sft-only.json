@@ -1,0 +1,87 @@
+{
+  "name": "galsenai-sft-only",
+  "params_m": 12.193548,
+  "metrics": {
+    "n_turns": 10,
+    "bits_per_byte": 2.278940191400024,
+    "nll_per_token": 5.2206573847056,
+    "perplexity": 185.05579694367583,
+    "rouge_l": 0.12428314328975829,
+    "token_f1": 0.1519891512981524,
+    "distinct_2": 0.8175942803999071,
+    "length_ratio": 0.38461204346611955,
+    "empty_rate": 0.0
+  },
+  "samples": [
+    {
+      "nll": 782.9539794921875,
+      "n_tokens": 161,
+      "ref_bytes": 551,
+      "pred": "Un membre explique.",
+      "ref": "Dans la discussion, un argument est que les modèles récents n'ont plus besoin de ces couches : une simple boucle agentique suffit, surtout avec la recherche web pour rester cohérent. Un membre nuance : il faut garder un MCP quand un cas d'usage le demande, car beaucoup de services proposent des API plus complètes. Le bash est présenté comme l'outil le plus puissant sur un système Unix. Concernant les multi-agents, un avis est de les éviter, car ils créent des problèmes de concurrence comme les interblocages et les conditions de course."
+    },
+    {
+      "nll": 435.04022216796875,
+      "n_tokens": 87,
+      "ref_bytes": 282,
+      "pred": "Un membreent de la discussion, et de la discussion : de la discussion : les modèles de l'usage.",
+      "ref": "Haskell est un langage purement fonctionnel, sans effets de bord, ce qui le rend élégant. Dans la discussion, il sert surtout à construire des compilateurs et des outils comme Pandoc. Pour le machine learning, Python avec des bibliothèques comme PyTorch reste le choix dominant."
+    },
+    {
+      "nll": 427.47528076171875,
+      "n_tokens": 76,
+      "ref_bytes": 255,
+      "pred": "Un membre explique.",
+      "ref": "Gemini est déjà très bon sur les langues peu dotées, mais son wolof ne sera pas aussi propre qu'avec un modèle dédié. Ça reste bien mieux que rien, et l'infrastructure est gérée par le fournisseur, donc pas besoin de déployer soi-même des GPU."
+    },
+    {
+      "nll": 266.12384033203125,
+      "n_tokens": 57,
+      "ref_bytes": 213,
+      "pred": "Un membre, la discussion, la discussion, la discussion, la discussion, latent de la discussion, latent à l'usage.",
+      "ref": "Selon un test partagé dans la discussion, oui : il alterne français et anglais avec un ton sénégalais. Le modèle est présenté comme open source, donc déployable sur sa propre infrastructure (à vérifier)."
+    },
+    {
+      "nll": 1832.6962890625,
+      "n_tokens": 356,
+      "ref_bytes": 1118,
+      "pred": "Un membre explique de c'est un modèle de la discussion, l'usage.",
+      "ref": "Les difficultés principales :\n1. Les modèles ASR sont entraînés sur de l'audio 16 kHz, alors que la téléphonie utilise un autre standard (G.711). Il faut donc adapter l'audio avec des algorithmes de downsampling, etc. Tant que tu n'as pas un modèle capable d'écouter le réseau mobile, impossible de brancher un LLM.\n2. Le LLM doit aussi comprendre un wolof bruité, mais c'est un autre problème.\n3. Le reste, c'est une bonne boucle agentique.\n\nCôté modèle, tu peux entraîner un Whisper puis le quantiser avec CTranslate2 pour le déployer sur plusieurs CPU ou GPU. À grande échelle, on peut monter progressivement jusqu'à une centaine de GPU H100 ; avec de la programmation parallèle, on fait tourner plusieurs modèles sur une même carte (jusqu'à environ 400 modèles ASR en parallèle), avec plusieurs workers qui se partagent le GPU et ZeroMQ en inproc pour le load balancing.\n\nOn est surtout face à un problème d'ingénierie : communiquer avec les systèmes mobiles est difficile, Twilio ne supporte pas les numéros sénégalais et les opérateurs ne proposent pas d'API pour ça à ce jour."
+    },
+    {
+      "nll": 396.8134765625,
+      "n_tokens": 75,
+      "ref_bytes": 244,
+      "pred": "Un membre, et des modèles plus évoiement.",
+      "ref": "Un membre explique que, selon ses informations, l'eau de mer est trop corrosive pour les composants, ce qui réduit leur durée de vie. Il ajoute que les data centers qui l'utilisent sont peu nombreux, et que cette information est à vérifier."
+    },
+    {
+      "nll": 357.9725341796875,
+      "n_tokens": 56,
+      "ref_bytes": 192,
+      "pred": "Un membreent avec des modèles évoquation est de la discussion : les modèles de la discussion : les modèles de l'ent des modèles évr des modèles évr des modèles évoiement sur le Ces à l'ent des modèles évoiement sur les modèles évoiement par exemple pour le CPU.",
+      "ref": "On peut les générer avec Python, par exemple avec matplotlib, puis les insérer dans son document LaTeX. Un agent comme Claude sait très bien le faire s'il a le droit d'utiliser matplotlib."
+    },
+    {
+      "nll": 540.9180297851562,
+      "n_tokens": 111,
+      "ref_bytes": 363,
+      "pred": "Une piste proposée est de la discussion, et de la discussion, et des modèles d'ustence avec des modèles d'usage, et des modèles d'ent.",
+      "ref": "Avec une API de modèle, le principe est le suivant : détecter qu'un message est un audio, le router vers un modèle de transcription (Whisper est cité en exemple), laisser l'agent produire une réponse textuelle, puis convertir cette réponse en audio et la renvoyer. Il faut aussi gérer la conversion des formats audio de WhatsApp, comme .oga, .opus ou .ogg."
+    },
+    {
+      "nll": 218.87066650390625,
+      "n_tokens": 48,
+      "ref_bytes": 167,
+      "pred": "Un membre aide : un modèle de la discussion, les modèles de la discussion, les conditions actuelles.",
+      "ref": "Selon un membre de la discussion, non : ces modèles ne prennent pas l'audio en entrée. Cette information est à vérifier, car les capacités des modèles évoluent."
+    },
+    {
+      "nll": 1366.14990234375,
+      "n_tokens": 242,
+      "ref_bytes": 809,
+      "pred": "Un membre explique est de la discussion, et les le modèle peut en de la discussion, et les un modèle peut en général.",
+      "ref": "Ça dépend du cas d'usage.\n\nPour avancer vite en tant que développeur, souvent mieux vaut payer un abonnement : acheter des GPU pour faire tourner un modèle open source qui met 2 minutes par réponse coûte plus cher à contourner que le prix d'un plan à 100 $. Du côté purement business, le closed source est plus simple. Les modèles closed ont aussi une avance importante, donc un modèle local risque d'être à la traîne face à ce que les gens peuvent obtenir ailleurs.\n\nL'open source reste très utile : il rend la technologie accessible à tous, il est précieux pour la recherche, et pour des usages locaux ou embarqués (confidentialité, hors-ligne). Le plus sain pour l'écosystème open est d'avoir sa propre direction plutôt que de se contenter de répliquer chaque nouveauté du closed."
+    }
+  ]
+}
