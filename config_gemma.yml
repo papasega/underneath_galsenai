@@ -1,0 +1,24 @@
+# LoRA SFT hyper-parameters for Gemma 4 E2B (mlx-lm). Edit here, then run ./scripts/train_lora.sh
+# mlx-lm has no "epochs" option: epochs = iters * batch_size / n_train = 170 * 2 / 68 = 5.
+model: mlx-community/gemma-4-E2B-it-qat-4bit
+train: true
+data: data/private/mlx_sft
+adapter_path: data/private/adapters/gemma4_e2b_galsenai
+fine_tune_type: lora        # lora | dora | full
+mask_prompt: true           # loss on assistant tokens only
+seed: 0
+
+iters: 170
+batch_size: 2
+learning_rate: 1.0e-4
+max_seq_length: 1024
+num_layers: 16              # number of top layers that get LoRA adapters
+grad_checkpoint: true
+
+lora_parameters:
+  rank: 8
+  scale: 20.0
+  dropout: 0.0
+
+steps_per_eval: 34          # = 1 epoch
+save_every: 34
