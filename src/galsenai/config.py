@@ -76,8 +76,16 @@ class ModelConfig:
         embeddings, logit soft-cap 15, RoPE base 1e5, SSSL sliding windows, residual/x0 lambdas, full MHA.
         Not ported: value embeddings, smear gate, FP8, flash-attention (see README)."""
         defaults: dict[str, Any] = dict(
-            mlp="relu2", qk_norm=True, norm_affine=False, tie_embeddings=False, logit_softcap=15.0,
-            layer_lambdas=True, rope_base=100_000.0, sliding_window=256, global_every=4, n_kv_head=n_head,
+            mlp="relu2",
+            qk_norm=True,
+            norm_affine=False,
+            tie_embeddings=False,
+            logit_softcap=15.0,
+            layer_lambdas=True,
+            rope_base=100_000.0,
+            sliding_window=256,
+            global_every=4,
+            n_kv_head=n_head,
         )
         return cls(vocab_size=vocab_size, n_head=n_head, **{**defaults, **overrides})
 

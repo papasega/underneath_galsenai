@@ -197,7 +197,8 @@ def test_lora_starts_as_identity_and_trains_only_adapters() -> None:
 
 
 def nano() -> GPT:
-    return GPT(ModelConfig.nanochat(**{k: v for k, v in TINY.items() if k not in ("n_kv_head",)} | {"sliding_window": 4})).eval()
+    cfg = {k: v for k, v in TINY.items() if k != "n_kv_head"} | {"sliding_window": 4}
+    return GPT(ModelConfig.nanochat(**cfg)).eval()
 
 
 def test_nanochat_preset_has_its_distinguishing_parts() -> None:

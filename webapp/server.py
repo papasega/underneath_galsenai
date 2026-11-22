@@ -52,7 +52,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 self._send(200, json.dumps({"model": model_name(), "system": SYSTEM}).encode())
             except (urllib.error.URLError, OSError, KeyError, IndexError) as e:
-                self._error(502, f"Inference server unreachable at {BASE}: {e}")
+                self._error(502, f"Serveur d'inférence injoignable ({BASE}). Lancez ./scripts/serve.sh, ou démarrez vLLM / mlx_lm.server puis VLLM_BASE_URL. Détail : {e}")
             return
         rel = "index.html" if self.path in ("/", "") else self.path.lstrip("/").split("?")[0]
         f = (STATIC / rel).resolve()
@@ -91,7 +91,7 @@ class Handler(BaseHTTPRequestHandler):
         except urllib.error.HTTPError as e:
             self._error(e.code, e.read().decode(errors="replace")[:500])
         except (urllib.error.URLError, OSError) as e:
-            self._error(502, f"Inference server unreachable at {BASE}: {e}")
+            self._error(502, f"Serveur d'inférence injoignable ({BASE}). Lancez ./scripts/serve.sh, ou démarrez vLLM / mlx_lm.server puis VLLM_BASE_URL. Détail : {e}")
 
 
 if __name__ == "__main__":

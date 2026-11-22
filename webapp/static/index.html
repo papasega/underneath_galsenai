@@ -12,16 +12,36 @@
     <span id="model" class="model"></span>
     <button id="clear" class="ghost" title="Nouvelle conversation">Nouveau</button>
   </header>
-  <main id="log" aria-live="polite">
-    <div id="empty" class="empty">
-      <h1>Posez votre question</h1>
-      <p>Assistant de la communauté GalsenAI.</p>
+  <div class="layout">
+    <aside>
+      <h2>Thématiques du groupe</h2>
+      <ul id="themes">
+        <li>LLM et modèles (GPT, Claude, Gemini, Gemma…)</li>
+        <li>Agents, outils et assistants de code</li>
+        <li>Entraînement, fine-tuning et RL</li>
+        <li>NLP et langues locales (wolof…)</li>
+        <li>Python, code et développement</li>
+        <li>Maths, théorie et recherche</li>
+        <li>Infra, GPU et calcul</li>
+        <li>Carrière, emploi et études</li>
+        <li>Événements et communauté au Sénégal</li>
+      </ul>
+      <p class="hint">Cliquez sur un thème pour poser une question.</p>
+    </aside>
+    <div class="chat">
+      <main id="log" aria-live="polite">
+        <div id="empty" class="empty">
+          <h1>Posez votre question</h1>
+          <p>Assistant de la communauté GalsenAI.</p>
+        </div>
+      </main>
+      <form id="form">
+        <textarea id="input" rows="1" placeholder="Écrivez un message…" autofocus></textarea>
+        <button id="send" type="submit" aria-label="Envoyer">&#10148;</button>
+      </form>
     </div>
-  </main>
-  <form id="form">
-    <textarea id="input" rows="1" placeholder="Écrivez un message…" autofocus></textarea>
-    <button id="send" type="submit" aria-label="Envoyer">&#10148;</button>
-  </form>
+  </div>
+  <footer>GalsenAI · Questions/Réponses · modèle expérimental, vérifiez les informations importantes</footer>
   <script src="/app.js"></script>
 </body>
 </html>

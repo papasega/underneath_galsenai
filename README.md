@@ -1,4 +1,5 @@
-# GalsenAI Underneath : WhatsApp Discussions Questions/Réponses
+# GalsenAI Underneath
+### WhatsApp Discussions Questions/Réponses
 
 Turn the GalsenAI "Questions/Réponses" WhatsApp discussion into a small French chat assistant, and compare two ways
 of getting there on one laptop (Apple M5 Pro, 24 GB):
@@ -116,17 +117,19 @@ validation answers come from (optimistic); "SFT only" is the leak-free row. Gemm
 
 ## Chat web app
 
-`webapp/` is a minimal chat UI (GalsenAI logo and colours) that streams from any OpenAI-compatible server. vLLM needs
-a GPU machine; on the Mac use `mlx_lm.server`.
+`webapp/` is a minimal chat UI (GalsenAI logo and colours: green top bar and footer, white conversation area, left
+panel listing the group's themes) that streams from any OpenAI-compatible server. vLLM needs a GPU machine; on the Mac
+`./scripts/serve.sh` starts `mlx_lm.server` (with the LoRA adapter if present) and the web app together:
 
 ```bash
-# GPU machine
+./scripts/serve.sh                      # then open http://127.0.0.1:8080
+# GPU machine instead
 vllm serve google/gemma-4-E2B-it --port 8000
 VLLM_BASE_URL=http://HOST:8000/v1 python3 webapp/server.py
-# Mac, with the LoRA adapter
-mlx_lm.server --model mlx-community/gemma-4-E2B-it-qat-4bit --adapter-path data/private/adapters/gemma4_e2b_galsenai --port 8001
-VLLM_BASE_URL=http://localhost:8001/v1 python3 webapp/server.py        # then open http://127.0.0.1:8080
 ```
+
+With `mlx_lm.server` the model name must be `default_model` to use the preloaded model and its adapter (`serve.sh` sets
+it); any other name makes the server load that model without the adapter.
 
 Optional environment variables: `MODEL`, `SYSTEM_PROMPT`, `API_KEY`. Standard library only.
 

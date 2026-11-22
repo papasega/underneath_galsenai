@@ -1,4 +1,6 @@
-"""Base pre-training and SFT in the nanochat recipe: ``python -m galsenai.train --config config_nanochat.yml --stage sft``.
+"""Base pre-training and SFT in the nanochat recipe.
+
+    python -m galsenai.train --config config_nanochat.yml --stage sft
 
 ``base`` learns next-token prediction on chat text; ``sft`` trains on conversations with the loss on assistant
 tokens only. AdamW with warmup + cosine decay, grad clipping, float32 (MPS/CUDA/CPU).
@@ -15,6 +17,7 @@ import re
 import time
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import torch
 import yaml
@@ -22,6 +25,10 @@ import yaml
 from galsenai import GPT, ModelConfig
 from galsenai.chat import BOS, load_tokenizer, render_conversation
 from galsenai.checkpoint import load_checkpoint, save_checkpoint
+from minbpe import RegexTokenizer
+
+Cfg = dict[str, Any]
+Batch = tuple[torch.Tensor, torch.Tensor]
 
 ROOT = Path.cwd()
 PREFIX = re.compile(r"^\d{4}-\d\d \| U\d+: ")
@@ -50,7 +57,7 @@ def fit(
     batch_fn: Callable[[int], tuple[torch.Tensor, torch.Tensor]],
     steps: int,
     steps_per_epoch: int,
-    hp: dict,
+    hp: Cfg,
     eval_fn: Callable[[], float],
     out: Path,
 ) -> None:
@@ -76,12 +83,13 @@ def fit(
                 best, mark = val, " *"
                 save_checkpoint(model, out)
             print(
-                f"epoch {epoch:5.1f} step {step + 1:5d} train {loss.item():.3f} val {val:.3f}{mark} ({time.time() - t0:.0f}s)"
+                f"epoch {epoch:5.1f} step {step + 1:5d} train {loss.item():.3f} "
+                f"val {val:.3f}{mark} ({time.time() - t0:.0f}s)"
             )
     print(f"best val {best:.3f} -> {out}")
 
 
-def pad_batch(rows: list[tuple[list[int], list[int]]], block: int, ignore: int, device: str):
+def pad_batch(rows: list[tuple[list[int], list[int]]], block: int, ignore: int, device: str) -> Batch:
     """Right-pad (ids, mask) rows into inputs and targets; masked and padded targets become ignore_index."""
     n = min(max(len(i) for i, _ in rows), block + 1)
     x = torch.zeros(len(rows), n - 1, dtype=torch.long)
@@ -94,11 +102,11 @@ def pad_batch(rows: list[tuple[list[int], list[int]]], block: int, ignore: int, 
     return x.to(device), y.to(device)
 
 
-def build_model(cfg: dict, vocab_size: int) -> GPT:
+def build_model(cfg: Cfg, vocab_size: int) -> GPT:
     return GPT(ModelConfig.nanochat(vocab_size, **cfg["model"]))
 
 
-def train_base(cfg: dict, tok, device: str) -> None:
+def train_base(cfg: Cfg, tok: RegexTokenizer, device: str) -> None:
     hp, rng = cfg["base"], random.Random(cfg["seed"])
     bos = tok.special_tokens[BOS]
     ids = [t for m in chat_messages(ROOT / hp["corpus"]) for t in (bos, *tok.encode(m))]
@@ -111,12 +119,12 @@ def train_base(cfg: dict, tok, device: str) -> None:
     model = build_model(cfg, tok_vocab(tok)).to(device)
     print(f"model: {model.num_params() / 1e6:.1f}M params on {device}")
 
-    def window(src: torch.Tensor, starts: list[int]):
+    def window(src: torch.Tensor, starts: list[int]) -> Batch:
         x = torch.stack([src[s : s + T] for s in starts]).to(device)
         y = torch.stack([src[s + 1 : s + T + 1] for s in starts]).to(device)
         return x, y
 
-    def batch(_: int):
+    def batch(_: int) -> Batch:
         return window(train_ids, [rng.randrange(len(train_ids) - T - 1) for _ in range(B)])
 
     @torch.no_grad()
@@ -129,15 +137,15 @@ def train_base(cfg: dict, tok, device: str) -> None:
     fit(model, batch, steps, steps_per_epoch, hp, evaluate, ROOT / hp["out"])
 
 
-def read_jsonl(path: Path) -> list[list[dict]]:
+def read_jsonl(path: Path) -> list[list[dict[str, str]]]:
     return [json.loads(line)["messages"] for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def tok_vocab(tok) -> int:
+def tok_vocab(tok: RegexTokenizer) -> int:
     return max(max(tok.vocab), *tok.special_tokens.values()) + 1
 
 
-def train_sft(cfg: dict, tok, device: str) -> None:
+def train_sft(cfg: Cfg, tok: RegexTokenizer, device: str) -> None:
     hp, rng = cfg["sft"], random.Random(cfg["seed"])
     train = [render_conversation(tok, c) for c in read_jsonl(ROOT / hp["train"])]
     valid = [render_conversation(tok, c) for c in read_jsonl(ROOT / hp["valid"])]
@@ -145,14 +153,15 @@ def train_sft(cfg: dict, tok, device: str) -> None:
     steps_per_epoch = math.ceil(len(train) / B)
     steps = hp["epochs"] * steps_per_epoch
     print(
-        f"sft: {len(train)} train / {len(valid)} valid conversations, {steps_per_epoch} steps/epoch x {hp['epochs']} epochs = {steps} steps"
+        f"sft: {len(train)} train / {len(valid)} valid conversations, "
+        f"{steps_per_epoch} steps/epoch x {hp['epochs']} epochs = {steps} steps"
     )
     init = hp.get("init_from")
     model = load_checkpoint(ROOT / init, device) if init else build_model(cfg, tok_vocab(tok)).to(device)
     block, ign = model.cfg.block_size, model.cfg.ignore_index
     order: list[int] = []
 
-    def batch(_: int):
+    def batch(_: int) -> Batch:
         nonlocal order
         if len(order) < B:
             order = rng.sample(range(len(train)), len(train))  # a fresh shuffle each epoch

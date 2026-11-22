@@ -40,8 +40,12 @@ async function ask(text) {
       const lines = buf.split("\n"); buf = lines.pop();
       for (const l of lines) {
         if (!l.startsWith("data: ") || l.includes("[DONE]")) continue;
-        answer += JSON.parse(l.slice(6)).choices?.[0]?.delta?.content || "";
-        render(bubble, answer); log.scrollTop = log.scrollHeight;
+        const delta = JSON.parse(l.slice(6)).choices?.[0]?.delta || {};
+        answer += delta.content || "";
+        // Gemma thinks first: show a hint until the first answer token arrives.
+        bubble.classList.toggle("thinking", !answer && !!delta.reasoning);
+        if (!answer && delta.reasoning) bubble.textContent = "Réflexion…"; else render(bubble, answer);
+        log.scrollTop = log.scrollHeight;
       }
     }
     history.push({ role: "assistant", content: answer });
@@ -59,4 +63,7 @@ form.addEventListener("submit", async e => {
 });
 input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
 input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = input.scrollHeight + "px"; });
+document.querySelectorAll("#themes li").forEach(li => li.onclick = () => {
+  input.value = "Que dit le groupe sur : " + li.textContent + " ?"; input.focus();
+});
 document.getElementById("clear").onclick = () => { history = []; location.reload(); };
