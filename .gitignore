@@ -215,3 +215,13 @@ report/*.log
 report/*.xdv
 report/*.fls
 report/*.fdb_latexmk
+
+# Full fine-tuning and RAG results: local only until checked for leaks
+results/local/
+results/*full*
+results/*rag*
+data/private/rag/
+results/*merge*
+results/*sweep*
+
+scripts/local_sweep_commands.sh

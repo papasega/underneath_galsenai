@@ -23,12 +23,16 @@ ap.add_argument("--model", default="mlx-community/gemma-4-E2B-it-qat-4bit")
 ap.add_argument("--adapter", type=Path)
 ap.add_argument("--data", type=Path, default=ROOT / "data/private/mlx_sft/valid.jsonl")
 ap.add_argument("--max-new-tokens", type=int, default=1500, help="Gemma may think first, so it needs room")
+ap.add_argument("--rag-method", choices=["bm25", "dense", "hybrid", "oracle"], help="answer with passages (results/local/rag_ctx.json)")
 ap.add_argument("--out", type=Path)
 a = ap.parse_args()
 
+ctxs = json.loads((ROOT / "results/local/rag_ctx.json").read_text())["contexts"][a.rag_method] if a.rag_method else None
 model, tok = load(a.model, adapter_path=str(a.adapter) if a.adapter else None)
 rows = []
-for history, ref in assistant_turns(a.data):
+for i, (history, ref) in enumerate(assistant_turns(a.data)):
+    if ctxs:
+        history = [*history[:-1], {**history[-1], "content": ctxs[i]}]
     prompt = tok.apply_chat_template(history, add_generation_prompt=True, tokenize=True)
     full = tok.apply_chat_template([*history, ref], tokenize=True)
     if full[: len(prompt)] != prompt:
@@ -49,6 +53,7 @@ for history, ref in assistant_turns(a.data):
             "ref_bytes": len(ref["content"].encode()),
             "pred": pred,
             "ref": ref["content"],
+            **({"ctx": ctxs[i]} if ctxs else {}),
         }
     )
 

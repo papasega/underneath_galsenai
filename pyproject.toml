@@ -17,6 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+rag = ["sentence-transformers>=6.1", "transformers>=5.18"]  # embeddinggemma-2 retrieval (webapp/rag.py)
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
 
 [tool.setuptools]

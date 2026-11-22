@@ -41,13 +41,27 @@ def distinct2(text: str) -> float:
     return len(set(bi)) / len(bi) if bi else 0.0
 
 
+def grounded(pred: str, ctx: str) -> float:
+    """Share of the answer's content words (4+ letters) found in the retrieved passages."""
+    ws = [w for w in words(pred) if len(w) > 3]
+    have = set(words(ctx))
+    return sum(w in have for w in ws) / len(ws) if ws else 0.0
+
+
 def summarize(rows: list[dict]) -> dict:
     """rows: one per assistant turn with nll (nats, summed), n_tokens, ref_bytes, pred, ref."""
     n = len(rows)
     def mean(f):
         return sum(f(r) for r in rows) / n
     nll, toks, nbytes = (sum(r[k] for r in rows) for k in ("nll", "n_tokens", "ref_bytes"))
+    extra = {}
+    if "ctx" in rows[0]:  # RAG runs: how much of the answer comes from the passages, and whether they are cited
+        extra = {
+            "groundedness": mean(lambda r: grounded(r["pred"], r["ctx"])),
+            "cited": mean(lambda r: bool(re.search(r"\[\d\]", r["pred"]))),
+        }
     return {
+        **extra,
         "n_turns": n,
         "bits_per_byte": nll / (math.log(2) * nbytes),
         "nll_per_token": nll / toks,

@@ -19,6 +19,9 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+import rag  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = Path(__file__).parent / "static"
 BASE = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1").rstrip("/")
@@ -34,6 +37,7 @@ NANO_CKPT = Path(os.environ.get("NANOCHAT_CHECKPOINT", ROOT / "data/private/chec
 NANO_TOK = Path(os.environ.get("NANOCHAT_TOKENIZER", ROOT / "data/private/galsenai_tok/galsenai.model"))
 TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml"}
 MAX_BODY = 1_000_000
+MODELS_DIR = ROOT / "data/private/models"  # full fine-tuning and merged models: gemma4-full-<name>/ (see scripts/run_full.sh)
 _nano: dict = {}
 _nano_lock = threading.Lock()
 
@@ -61,6 +65,11 @@ def gemma_info() -> dict:
         return {"id": "gemma", "name": "galsenai-gemma", "detail": detail, "available": True}
     except (urllib.error.URLError, OSError, KeyError, IndexError):
         return {"id": "gemma", "name": "galsenai-gemma", "detail": f"serveur injoignable ({BASE})", "available": False}
+
+
+def full_models() -> dict[str, Path]:
+    """Local full-fine-tuned / merged Gemma checkpoints, served by mlx_lm.server loading them by path on demand."""
+    return {d.name: d for d in sorted(MODELS_DIR.glob("gemma4-full-*")) if (d / "config.json").is_file()}
 
 
 def nanochat_info() -> dict:
@@ -120,7 +129,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/api/config":
-            models = [gemma_info(), nanochat_info()]
+            models = [gemma_info(), *({"id": n, "name": n, "available": True,
+                                      "detail": "Gemma 4 E2B, poids complets (chargé à la demande par mlx_lm.server)"}
+                                     for n in full_models()), nanochat_info()]
             default = next((m["id"] for m in models if m["available"]), "gemma")
             return self._send(200, json.dumps({"models": models, "default": default}).encode())
         rel = "index.html" if self.path in ("/", "") else self.path.lstrip("/").split("?")[0]
@@ -146,16 +157,18 @@ class Handler(BaseHTTPRequestHandler):
             messages = req["messages"]
             assert isinstance(messages, list) and messages
             which = req.get("model", "gemma")
-            assert which in ("gemma", "nanochat")
+            assert which in ("gemma", "nanochat", *full_models())
             max_tokens = min(int(req.get("max_tokens", 512)), 2048)
             temperature = float(req.get("temperature", 0.7))
+            method = req.get("rag", "off")
+            assert method in ("off", "bm25", "dense", "hybrid")
         except (ValueError, KeyError, AssertionError):
             return self._error(400, "expected {messages: [...], model: 'gemma'|'nanochat'}")
         try:
             if which == "nanochat":
                 self._nanochat(messages, max_tokens, temperature)
             else:
-                self._gemma(messages, max_tokens, temperature)
+                self._gemma(messages, max_tokens, temperature, method, which)
         except (BrokenPipeError, ConnectionResetError):
             pass  # the browser closed the stream
 
@@ -174,14 +187,21 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
         self.wfile.write(b"data: [DONE]\n\n")
 
-    def _gemma(self, messages: list[dict], max_tokens: int, temperature: float) -> None:
+    def _gemma(self, messages: list[dict], max_tokens: int, temperature: float, method: str = "off", which: str = "gemma") -> None:
         try:
+            sources: list[dict] = []
+            if method != "off":  # the passages go into the last user turn; the client history stays clean
+                sources = rag.retrieve(rag.query_from(messages), 4, method)
+                if sources:
+                    messages = [*messages[:-1], {**messages[-1], "content": rag.build_prompt(messages[-1]["content"], sources)}]
             if SYSTEM and messages[0].get("role") != "system":
                 messages = [{"role": "system", "content": SYSTEM}, *messages]
-            body = {"model": upstream_model(), "messages": messages, "stream": True,
+            body = {"model": str(full_models()[which]) if which != "gemma" else upstream_model(), "messages": messages, "stream": True,
                     "max_tokens": max_tokens, "temperature": temperature}
             with upstream("/chat/completions", body) as r:
                 self._sse_start()
+                if method != "off":
+                    self.wfile.write(b"data: " + json.dumps({"sources": sources}).encode() + b"\n\n")
                 while chunk := r.readline():
                     self.wfile.write(chunk)
                     self.wfile.flush()

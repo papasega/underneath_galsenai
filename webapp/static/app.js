@@ -85,9 +85,9 @@ async function ask(text) {
   addMsg("user", text);
   const bubble = addMsg("assistant", ""); bubble.classList.add("typing");
   const messages = history;  // the system prompt (Gemma only) is added by the server
-  let answer = "";
+  let answer = "", sources = [];
   try {
-    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages, model: picker.value }) });
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages, model: picker.value, rag: document.getElementById("rag").value }) });
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;) {
@@ -96,7 +96,9 @@ async function ask(text) {
       const lines = buf.split("\n"); buf = lines.pop();
       for (const l of lines) {
         if (!l.startsWith("data: ") || l.includes("[DONE]")) continue;
-        const delta = JSON.parse(l.slice(6)).choices?.[0]?.delta || {};
+        const ev = JSON.parse(l.slice(6));
+        if (ev.sources) { sources = ev.sources; continue; }
+        const delta = ev.choices?.[0]?.delta || {};
         answer += delta.content || "";
         bubble.classList.toggle("thinking", !answer && !!delta.reasoning);   // Gemma thinks first
         if (!answer && delta.reasoning) bubble.textContent = "Réflexion…"; else markdown(bubble, answer);
@@ -104,6 +106,12 @@ async function ask(text) {
       }
     }
     history.push({ role: "assistant", content: answer });
+    if (sources.length) {
+      const d = document.createElement("details"); d.className = "sources";
+      d.append(mk("summary", `Sources (${sources.length})`));
+      sources.forEach((s, k) => { const p = document.createElement("pre"); p.textContent = `[${k + 1}] ${s.month}\n${s.text}`; d.append(p); });
+      bubble.append(d);
+    }
   } catch (e) {
     history.pop(); bubble.classList.add("error"); bubble.textContent = "Erreur : " + e.message;
   }

@@ -119,6 +119,33 @@ Caveats: 10 turns from 8 conversations, so only large gaps mean something. `gals
 validation answers come from (optimistic); "SFT only" is the leak-free row. Gemma answers with its thinking mode on
 (same template as training) and the thought block is stripped before scoring.
 
+## Full fine-tuning and model merging (local)
+
+`config_gemma_full.yml` trains the real weights of the top 16 blocks of the bf16 `google/gemma-4-E2B-it` (Adafactor, lr 2e-5);
+LoRA instead trains small adapters on the 4-bit model. Everything is driven by `scripts/run_full.sh`:
+
+```
+./scripts/run_full.sh train                 # add flags to override, e.g. --learning-rate 1e-5 --num-layers -1
+./scripts/run_full.sh fuse                  # -> data/private/models/gemma4-full-ft
+./scripts/run_full.sh merge 20 40 60 80     # base + full weights: gemma4-full-merge-w<pct> (pct = % of the fine-tuned model)
+./scripts/run_full.sh eval                  # validation metrics for every gemma4-full-* model + the bf16 base
+```
+
+Every `data/private/models/gemma4-full-*` directory (including the `merge-w<pct>` ones) shows up in the chat app's model picker.
+Outputs (`results/*full*`, `results/*merge*`, `data/private/`) are git-ignored. Useful variants: `./scripts/run_full.sh ckpt STEP`
+(checkpoint at iteration STEP), `FULL=ep1 ./scripts/run_full.sh merge 40 60` (merge a specific fused model).
+
+Outcome: full fine-tuning did not beat LoRA on validation loss (best 3.42 after 1 epoch, then overfits; LoRA 1 epoch: 2.66), and
+training all blocks diverges. LoRA stays the served model; see `results/eval_compare.md`.
+
+## RAG (retrieval over the anonymized chat)
+
+`webapp/rag.py` indexes `data/private/chat_anonymized.txt` (windows of 4 messages) with BM25, `google/embeddinggemma-2`
+(text only, `pip install -e .[rag]`) or both (reciprocal rank fusion). The chat app has a RAG selector; passages are injected
+in the last user turn and shown under the answer. `scripts/rag_contexts.py` scores retrieval (hit@k, MRR, context recall, chunk
+sizes), `scripts/run_eval_rag.sh` evaluates Gemma + RAG on the validation turns, `scripts/eval_rag.py` runs hand-written questions.
+Results go to `results/local/` and `results/eval_compare.md`.
+
 ## Chat web app
 
 `webapp/` is a minimal chat UI (GalsenAI logo and colours: green top bar and footer, white conversation area, left
@@ -137,74 +164,13 @@ sets it and passes the real name to the UI via `ACTIVE_MODEL`); any other name l
 
 Optional environment variables: `MODEL`, `SYSTEM_PROMPT`, `API_KEY`. Standard library only.
 
-## Statistics, top voices and word cloud
-
-Computed on the **anonymized** chat (`scripts/chat_figures.py`, so safe to publish): 3383 messages, 103 members.
-Voices are the random labels of the anonymized file (`U10`...), not names; they are stable only for that file.
-
-**Themes** (share of messages mentioning each theme, keyword detection, a message can count for several):
-
-| Theme | Share |
-|---|---|
-| LLM / modèles | 9.5 % |
-| Agents / outils | 6.2 % |
-| Code / Python | 3.9 % |
-| NLP langues locales | 2.9 % |
-| Événements / communauté | 2.8 % |
-| Entraînement / RL | 2.7 % |
-| Maths / recherche | 2.2 % |
-| Carrière / études | 2.0 % |
-| Infra / GPU | 1.5 % |
-
-**Messages per month:** 04/26: 198 · 05/26: 55 · 06/26: 1558 · 07/26: 506 · 08/26: 189 · 09/26: 612 · 10/26: 212 · 11/26: 53. June alone holds almost half of the messages.
-
-**Top voices** (the 10 most active write 84 % of the messages). "Theme" is where the voice is most over-represented
-compared with the group; "distinctive words" are its most characteristic words (words used by at least 4 voices only,
-so names and typos are mostly filtered out):
-
-| Voice | Messages | Share | Words/msg | Theme | Distinctive words |
-|---|---|---|---|---|---|
-| U10 | 1075 | 31.8 % | 19 | Agents / outils | humanité, action, donner |
-| U23 | 910 | 26.9 % | 16 | Code / Python | etait, ailleurs, plutot |
-| U69 | 280 | 8.3 % | 9 | Agents / outils | apres, contexte, genre |
-| U27 | 141 | 4.2 % | 22 | Infra / GPU | risque, expertise, experts |
-| U65 | 109 | 3.2 % | 17 | Événements / communauté | scolaire, sénégalais, opportunités |
-| U29 | 76 | 2.2 % | 18 | NLP langues locales | accord, question |
-| U28 | 72 | 2.1 % | 10 | Carrière / études | dernière, master |
-| U02 | 65 | 1.9 % | 16 | Agents / outils | tokens, jeunes, agent |
-| U36 | 61 | 1.8 % | 23 | Carrière / études | tourne, internet, offline |
-| U89 | 60 | 1.8 % | 56 | Entraînement / RL | output, images, conversation |
-
-```bash
-uv run --no-project --with wordcloud python scripts/chat_figures.py   # figures, report/stats_data.tex, results/chat_stats.json
-```
-
-Caveats: themes are keyword-based (false positives on "data", "code"); word clouds drop stop words, laughs, file names and
-words that are usually capitalized (likely names), but the anonymizer cannot see every name in free text. Review the
-cloud and the voice words before publishing, and keep an optional `data/private/redact_words.txt` (one name per line,
-git-ignored) for names you spot.
-
-## Raw statistics (private)
-
-`python3 scripts/whatsapp_stats.py` writes `data/whatsapp_questions_reponses/stats_discussion.md` from the raw export (profile
-names included, git-ignored): anonymize before sharing it.
-
 ## Report
 
-`report/rapport_galsenai_underneath.pdf` is the only report file in the repository (3 pages, French: cover with a map of
-Senegal and the GalsenAI logo, what was built, results, discussion statistics). Its LaTeX sources are **kept local and
-git-ignored**:
+The discussion statistics (themes, top voices, word cloud) are in [`results/STATISTICS.md`](results/STATISTICS.md).
 
-| File (in `report/`) | Role |
-|---|---|
-| `main.tex` | Title macros and document skeleton |
-| `style.tex` | GalsenAI palette (ink, greens), fonts, header/footer, cover page |
-| `corps.tex` | Page 2: objective, data, privacy, what was built, results table, takeaways |
-| `corps_stats.tex` | Page 3: theme and monthly charts, top voices, word cloud |
-| `senegal.tex` | TikZ map of the 14 regions, **generated** by `scripts/make_senegal_map.py` |
-| `stats_data.tex` | pgfplots data, **generated** by `scripts/chat_figures.py` |
-| `assets/` | Logo (vector PDF converted from `assets/galsenai-blanc-sans-signature.svg`) and the word cloud |
-| `.latexmkrc` | XeLaTeX build settings |
+`report/rapport_galsenai_underneath.pdf` is the only report file in the repository (3 pages, French: cover with a map of
+Senegal and the GalsenAI logo, what was built, results, discussion statistics). Its LaTeX sources (`report/*.tex`, `assets/`) are **kept local and git-ignored**; `senegal.tex` is generated by
+`scripts/make_senegal_map.py` and `stats_data.tex` by `scripts/chat_figures.py`.
 
 Rebuild: `python3 scripts/make_senegal_map.py`, `uv run --no-project --with wordcloud python scripts/chat_figures.py`,
 then `cd report && latexmk -xelatex main.tex`.

@@ -10,6 +10,10 @@
   <header>
     <img src="/logo.svg" alt="GalsenAI" class="logo">
     <select id="model" aria-label="Modèle"></select>
+    <select id="rag" aria-label="Récupération (RAG)" title="RAG : passages du groupe injectés dans la question (Gemma)">
+      <option value="off">RAG : off</option><option value="bm25">RAG : BM25</option>
+      <option value="dense">RAG : embeddinggemma-2</option><option value="hybrid">RAG : hybride</option>
+    </select>
     <span id="detail" class="model"></span>
     <button id="clear" class="ghost" title="Nouvelle conversation">Nouveau</button>
   </header>
