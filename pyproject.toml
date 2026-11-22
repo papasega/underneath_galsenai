@@ -12,6 +12,7 @@ dependencies = [
     "torch>=2.5",
     "regex>=2023.0",  # used by the vendored minbpe tokenizer
     "tqdm>=4.66",  # progress bars in minbpe training
+    "tiktoken>=0.7",  # imported by minbpe/__init__.py (GPT4Tokenizer)
 ]
 
 [project.optional-dependencies]
