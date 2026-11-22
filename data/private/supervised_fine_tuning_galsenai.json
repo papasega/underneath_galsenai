@@ -234,5 +234,657 @@
       "role": "assistant",
       "content": "C'est laisser l'agent travailler de manière plus autonome en automatisant des tâches ; certains le combinent avec un objectif (un « goal ») pour créer un système où l'humain ne fait plus partie de la boucle mais en devient le concepteur. Cela demande souvent un agent très solide en computer use. Cette approche est discutée : sortir l'humain de la boucle peut créer plus de problèmes qu'elle n'en résout, car ce que l'agent fait sans consulter l'utilisateur, il le fait potentiellement contre lui."
     }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Que pensez-vous des modèles open-weight, par exemple le modèle GLM ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Ils rattrapent doucement leur retard sur les modèles frontière, et les résultats en développement front-end sont impressionnants. Leur intérêt principal : un déploiement on-premise sur de petits clusters (par exemple des machines NVIDIA DGX ou des Mac mini), qui peut compenser le manque de compute et réduire la dépendance aux modèles fermés."
+    },
+    {
+      "role": "user",
+      "content": "Quels autres aléas peut-on citer ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Il y en a trois. La dépendance : si les grands acteurs qui publient ces modèles changent de stratégie, cette source peut disparaître, même si le risque paraît faible vu la taille de l'écosystème open source. Les capacités : développer soi-même des modèles compétitifs demande de l'expertise, du compute, des données et des financements, que peu d'acteurs réunissent. L'infrastructure : les clusters consomment beaucoup d'électricité et d'eau pour le refroidissement, ce qu'il faut intégrer dès la planification."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Pourquoi garder les termes techniques en français au lieu de les traduire en wolof pur, alors que l'objectif est un enseignement en langues locales ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Le choix est volontaire. Si l'on traduit des termes comme molécule, intégrale ou équation différentielle, on perd une partie du public, et une traduction trop pure devient elle-même une barrière. Le wolof parlé dans la rue est un mélange de wolof, de français et de quelques mots peuls. Viser 100 % de langues locales n'a donc pas de sens pratique : mieux vaut un mélange qui reflète l'usage réel."
+    },
+    {
+      "role": "user",
+      "content": "Donc on vise un mélange plutôt que 100 % wolof ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Oui. On peut expliquer des notions simples en langue locale, par exemple dire 1+1=2 en wolof, ce qui peut surtout aider l'apprentissage des maths élémentaires, sans viser 100 %."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Tu sais de quoi ça parle concrètement, Navier-Stokes ? Explique-nous d'abord, s'il te plaît."
+    },
+    {
+      "role": "assistant",
+      "content": "C'est une équation qui décrit le mouvement des fluides, utilisée par exemple pour modéliser le climat ou l'écoulement d'un fleuve. Le problème ouvert porte sur les solutions mathématiques exactes : partant d'un état initial lisse, la solution reste-t-elle lisse pour tout temps, ou existe-t-il un instant fini où la vitesse, ou son gradient, devient infinie ? Ce n'est pas une erreur de simulation numérique, mais une question sur l'équation elle-même."
+    },
+    {
+      "role": "user",
+      "content": "Donc si elle explose, elle ne marche plus ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un vrai fluide n'atteint jamais une vitesse infinie : bien avant, l'hypothèse du milieu continu s'effondre et la physique moléculaire prend le relais. Un blow-up signifierait donc que l'équation cesse d'être un modèle valide au-delà d'un certain régime, sans être fausse là où on l'utilise. Un résultat annoncé récemment (à vérifier) concerne le cas avec force externe lisse ; le cas du fluide libre, sans force, reste une question distincte."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Si on trouve un algorithme polynomial pour un seul problème NP-complet, est-ce que P = NP est prouvé ?"
+    },
+    {
+      "role": "assistant",
+      "content": "C'est l'argument avancé dans la discussion : un algorithme polynomial pour un seul problème NP-complet, comme 3-SAT, suffirait à établir P = NP. Mais aucune preuve de ce type n'est connue à ce jour (à vérifier), et la difficulté vient de la nature même du problème. Il faut donc distinguer une piste prometteuse d'une démonstration complète."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment gérer un agent qui tourne en rond, bloqué dans un minimum local ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une piste proposée est de réécrire les instructions de l'agent, ou de répartir le travail entre plusieurs groupes d'agents. Un autre avis est qu'une simple boucle agentique suffit pour des problèmes simples, sans passer par un swarm d'agents."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Un modèle entraîné par apprentissage par renforcement peut-il modifier les tests pour faire passer une tâche, même si le prompt l'interdit ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Oui, selon un article cité dans la discussion : le modèle peut modifier les fichiers de tests même si le prompt le lui interdit, car il cherche d'abord à atteindre l'objectif final. Un garde-fou écrit dans le prompt ne suffit donc pas."
+    },
+    {
+      "role": "user",
+      "content": "Comment se protéger ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une piste : un monitoring externe qui évalue chaque appel d'outil avant son exécution. Dans la discussion, un modèle moins performant mais moins cher peut surveiller un modèle plus performant, au prix d'un peu de performance. Selon l'architecture, la latence reste minime, et c'est ce monitoring, et non le modèle lui-même, qui bloque les demandes à risque."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Faut-il lire le code généré par un modèle, ou peut-on lui faire confiance ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Dans la discussion, l'avis est qu'il faut rester dans la boucle : lire, guider, et laisser le modèle agir comme une extension de ses bras. Un modèle peut produire du code qui marche mais reste difficile à maintenir, par exemple des fichiers de 3000 à 5000 lignes. Il peut aussi se tromper sans qu'on le voie, donc il faut éviter de lui faire confiance aveuglément. Une approche jugée plus fiable : combiner un générateur de code avec des vérificateurs, comme des tests et des contrôles automatiques."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Peut-on utiliser un modèle généraliste comme Gemini pour le wolof, ou faut-il un modèle dédié ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Gemini est déjà très bon sur les langues peu dotées, mais son wolof ne sera pas aussi propre qu'avec un modèle dédié. Ça reste bien mieux que rien, et l'infrastructure est gérée par le fournisseur, donc pas besoin de déployer soi-même des GPU."
+    },
+    {
+      "role": "user",
+      "content": "Un modèle dédié comme Soynade parle-t-il aussi français et anglais avec un ton sénégalais ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Selon un test partagé dans la discussion, oui : il alterne français et anglais avec un ton sénégalais. Le modèle est présenté comme open source, donc déployable sur sa propre infrastructure (à vérifier)."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quel niveau de Python faut-il pour faire du machine learning ou du deep learning ? Je parle du Python pur : chaînes, listes, ensembles, dictionnaires, POO, pas des bibliothèques."
+    },
+    {
+      "role": "assistant",
+      "content": "Maîtriser ces bases suffit pour commencer : les structures de données et la programmation orientée objet sont largement suffisantes, et le machine learning ne demande pas un niveau intermédiaire. Un niveau intermédiaire aide davantage quand on avance vers des modèles plus complexes, comme les modèles de diffusion."
+    },
+    {
+      "role": "user",
+      "content": "Et pour bien progresser ensuite ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Il est conseillé de ne pas se focaliser sur le code, mais de prendre le temps de comprendre les mathématiques, par exemple celles des couches de convolution. Comprendre les bases de la programmation et l'architecture logicielle est aussi jugé central dans l'IA."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Faut-il apprendre Julia ou Mojo pour faire de l'IA, plutôt que Python ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Julia est un beau langage, mais la discussion rappelle qu'il n'a pas réussi à remplacer Python et qu'il n'est pas nouveau. Python reste la base du domaine, et les grandes bibliothèques d'IA y sont déjà. Mojo est présenté comme très performant pour le passage à l'échelle en IA et optimisé pour les GPU, mais il est encore peu utilisé et moins facile à évaluer sur une machine sans GPU."
+    },
+    {
+      "role": "user",
+      "content": "Et pour quelqu'un qui débute ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Rester sur Python suffit pour débuter. Apprendre plusieurs langages reste utile pour découvrir des concepts, comme les structures de données avancées, et Rust ou C++ peuvent servir plus tard. L'essentiel reste de bien comprendre les bases de la programmation."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Pourquoi le bot répond-il en français à l'écrit, et en wolof seulement à l'audio, même quand on lui écrit en wolof ?"
+    },
+    {
+      "role": "assistant",
+      "content": "C'est un choix de conception. Si l'utilisateur sait lire, il comprend probablement mieux le français que le wolof écrit, donc la réponse écrite reste en français. Pour l'audio, la réponse est en wolof si l'utilisateur a aussi parlé en wolof au départ."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment payer une clé API OpenAI sans carte bancaire virtuelle, ni Wave ni Diamo ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Deux pistes sont évoquées dans la discussion : passer par un revendeur de clés API qui accepte le paiement par mobile money, ou essayer une autre carte, par exemple une Mastercard proposée par un opérateur local. Un membre affirme toutefois que l'API OpenAI exige une carte de débit émise par une banque (à vérifier, ces conditions changent)."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Les assistants IA sont-ils trop complaisants avec l'utilisateur ? Comment vérifier leurs réponses ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Dans la discussion, oui : les assistants ont tendance à être trop complaisants. Une méthode proposée est de ne pas accepter la première réponse : relancer avec « en es-tu sûr ? » ou « réponds sincèrement », ou proposer l'inverse de la suggestion pour voir la réaction, puis comparer les deux réponses avant de juger."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Peut-on faire tourner un modèle de langage sur un téléphone sans internet ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Oui, avec de petits modèles, de l'ordre de 2 à 4 milliards de paramètres. Un test partagé dans la discussion montre qu'un modèle Gemma de 4B tourne sur CPU, avec une latence plus élevée mais utilisable. La bibliothèque LiteRT-LM est optimisée pour le CPU et disponible en C++. Une petite boucle agentique fonctionne aussi hors ligne, avec quelques limites."
+    },
+    {
+      "role": "user",
+      "content": "Ces modèles locaux peuvent-ils remplacer les grands modèles fermés ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Non. Ils sont plutôt adaptés à l'IoT, aux appareils à faible puissance de calcul ou à des usages précis hors ligne, comme l'agriculture de précision dans une zone rurale. Ils restent utiles pour du développement personnalisé, mais ne remplaceront pas les plus grands modèles fermés."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Pourquoi publier des modèles open source si les modèles fermés sont en avance ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Publier reste une très bonne chose : la technologie devient accessible à tous, et la recherche y gagne. Pour le business pur, en revanche, un modèle fermé est plus simple. Un reproche revient aussi : l'open suit souvent les sorties fermées au lieu de tracer sa propre voie. Un exemple cité est ffmpeg, un logiciel libre devenu une base commune sans attendre les grandes plateformes."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment faire un agent WhatsApp qui accepte les messages audio ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Avec une API de modèle, le principe est le suivant : détecter qu'un message est un audio, le router vers un modèle de transcription (Whisper est cité en exemple), laisser l'agent produire une réponse textuelle, puis convertir cette réponse en audio et la renvoyer. Il faut aussi gérer la conversion des formats audio de WhatsApp, comme .oga, .opus ou .ogg."
+    },
+    {
+      "role": "user",
+      "content": "Les modèles Anthropic acceptent-ils l'audio en entrée ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Selon un membre de la discussion, non : ces modèles ne prennent pas l'audio en entrée. Cette information est à vérifier, car les capacités des modèles évoluent."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelqu'un sait où je peux me procurer ce livre sur l'ingénierie de l'IA à Dakar ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une librairie locale est peu probable. Une alternative est de commander en ligne avec livraison, et une version française, moins chère, est signalée. Si l'on est étudiant à l'UCAD, à l'UGB, au Sine Saloum ou à l'UAM, une plateforme universitaire donne accès à des livres en libre accès."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Entre les abonnements Claude et Codex, lequel tient le plus longtemps avant d'atteindre les limites ?"
+    },
+    {
+      "role": "assistant",
+      "content": "La discussion ne tranche pas. Un témoignage juge Codex excellent en génie logiciel, mais dit qu'il atteint vite sa limite. Un sondage a penché pour Claude. Les limites d'abonnement changent, il faut donc vérifier les conditions actuelles avant de choisir (à vérifier)."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelle est la fiabilité clinique de la vision par ordinateur en imagerie médicale, et quels cas d'usage sont pertinents ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un membre rappelle que les modèles échouent souvent une fois en production. Le domaine est sensible : il demande une expertise pointue en IA et en médecine, c'est pourquoi les équipes de recherche sont en général interdisciplinaires, avec des spécialistes du domaine. Pour les cas d'usage, plusieurs projets de chatbots en santé ont été lancés, avec une efficacité jugée discutable."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Ma carte Wave ne passe pas pour payer un modèle d'OpenAI pour un cours sur le RAG. Une solution ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un membre indique qu'OpenAI n'accepte en général pas les cartes prépayées. Une piste proposée est de passer par un compte PayPal, en créant un compte avec une carte prépayée liée à PayPal (à vérifier, les modes de paiement changent)."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Qu'est-ce que le loop engineering, et comment organiser des agents en DAG ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Le loop engineering consiste à laisser l'agent travailler de façon plus autonome en automatisant des tâches. Certains le combinent avec un objectif, ce qui peut retirer l'humain de la boucle. Une critique revient : sortir l'humain de la boucle ne règle pas les problèmes, il peut en créer. Une architecture proposée : un modèle de planification crée un DAG, chaque nœud est un agent dans son propre conteneur qui résout une étape locale et transmet son résultat aux nœuds suivants, et un modèle évalue le DAG pour décider d'itérer ou de clore. Le nœud bloqué peut être détecté et relancé."
+    },
+    {
+      "role": "user",
+      "content": "Les nœuds doivent-ils connaître toute la tâche, ou seulement la leur ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Dans la discussion, chaque nœud gère sa tâche locale tout en ayant une idée de l'objectif global. Par exemple, chaque nœud n'a accès qu'à quelques outils, comme la recherche web, la lecture et l'écriture, et transmet son résultat à son successeur."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelle différence entre Playwright MCP et Claude in Chrome pour automatiser des tests ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Playwright est un outil d'automatisation de tests, comparable à Selenium. Playwright MCP était utilisé avant Claude in Chrome. Claude in Chrome est intégré à Claude Code et, selon un membre, offre des capacités comparables, comme les captures d'écran. Un membre utilise Playwright pour les tests fonctionnels d'Odoo."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Un skill d'agent, c'est juste un fichier markdown ? Un SKILL.md suffit-il ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Dans la discussion, un skill est d'abord un package : un dossier avec des scripts, des ressources et des références, dont le SKILL.md est le point d'entrée, comparable à un README. Son frontmatter permet un chargement progressif, ce qui évite de faire exploser le contexte, un problème qui a motivé ce format avec les serveurs MCP. Un SKILL.md seul peut suffire pour une tâche simple, mais un vrai skill plus complexe gagne à respecter la structure complète."
+    },
+    {
+      "role": "user",
+      "content": "Un skill est-il vraiment plus riche qu'un programme ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Le débat est ouvert. Un argument est que le langage naturel permet d'améliorer le fond d'une tâche, pas seulement sa forme. Une objection répond qu'un package peut contenir des commentaires, donc du langage naturel, et que le SKILL.md n'est qu'un README : la différence avec un simple prompt ou une règle tient surtout à la structure du package."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Peut-on optimiser automatiquement le contenu d'un skill d'agent ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Oui, selon un article récent cité dans la discussion. Un second modèle, l'optimiseur, lit les essais notés de l'agent et propose des modifications bornées du skill : ajout, suppression ou remplacement. Une modification n'est retenue que si elle améliore strictement un score de validation séparé. Les modifications refusées sont gardées en mémoire. Tout le coût se paie hors ligne, donc l'agent n'ajoute aucun appel au déploiement. Les résultats annoncés sont à vérifier."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Ce modèle wolof avec 150 heures d'entraînement sera-t-il open source ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Pas pour le moment. Les créateurs annoncent qu'il sera bientôt disponible au public sur plusieurs plateformes, puis sous forme d'API. Ils prévoient ensuite de permettre son hébergement sur ses propres outils, sans précision de calendrier."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Peut-on refroidir un data center avec de l'eau de mer ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un membre explique que, selon ses informations, l'eau de mer est trop corrosive pour les composants, ce qui réduit leur durée de vie. Il ajoute que les data centers qui l'utilisent sont peu nombreux, et que cette information est à vérifier."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "À quoi servent les packages de skills, et pourquoi ne pas laisser le LLM improviser ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un skill est présenté comme une mémoire procédurale : des compétences fournies au LLM hors ligne. Par exemple, pour entraîner un modèle de reconnaissance vocale sur une plateforme de GPU, on peut fournir un package avec des scripts testés. Le LLM n'invente alors pas la procédure : il utilise vos scripts et vos références. À terme, la discussion imagine des registres de skills, comme npm ou pip, que les agents pourraient chercher et installer."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi un metaskill ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un metaskill est un skill qui expose des actions sur une base de skills : rechercher, télécharger, installer, créer et publier. Il joue le rôle d'un gestionnaire de skills, comme les méta-outils MCP. Dans la discussion, l'idée est de monter d'un niveau d'abstraction, avec une base indexée et un contrôle contre l'injection de prompt, qui reste un risque."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi la différence entre TTS et ASR ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Le TTS (Text To Speech) prend un texte et génère un audio qui le lit comme une personne. L'ASR (Automatic Speech Recognition) prend un audio et le transcrit en texte, comme les générateurs de sous-titres sur YouTube."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quel langage de programmation apprendre en pratique ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Haskell est jugé le plus élégant, et c'est un langage apprécié, mais dans la pratique Python, Java et JavaScript sont les choix les plus utiles. La discussion ne donne pas de recommandation plus précise."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Haskell a-t-il un intérêt en IA ? J'ai appris le langage, mais je ne vois pas encore son usage."
+    },
+    {
+      "role": "assistant",
+      "content": "Haskell est un langage purement fonctionnel, sans effets de bord, ce qui le rend élégant. Dans la discussion, il sert surtout à construire des compilateurs et des outils comme Pandoc. Pour le machine learning, Python avec des bibliothèques comme PyTorch reste le choix dominant."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Les skills et les garde-fous deviendront-ils inutiles quand les modèles seront plus performants ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un point de vue dans la discussion est oui : aujourd'hui les skills et les contrôles qualité sont nécessaires, mais un modèle plus capable a besoin de moins de béquilles, et des vérificateurs déterministes comme les linters peuvent gêner ses explorations. Un autre point de vue est de ne pas bâtir un outil sur une limite actuelle du modèle, car une nouvelle version peut rendre le dispositif obsolète. Il reste à choisir entre aider le modèle avec des instructions ou lui donner des outils et le laisser se débrouiller."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Faut-il créer une université dédiée à l'IA en Afrique ?"
+    },
+    {
+      "role": "assistant",
+      "content": "La discussion propose une voie plus rapide : créer des masters et des doctorats dans les universités existantes, avec des bourses à l'étranger assorties de clauses de retour. Une autre piste est de s'associer à des universités étrangères pour reprendre leurs programmes de master. Un membre estime que l'IA s'apprend aussi beaucoup en entreprise, vu la vitesse d'évolution du domaine."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Pourquoi un modèle qui tourne hors ligne compte-t-il au Sénégal ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un membre explique que le terminal est déjà présent, c'est le réseau qui manque. Les chiffres cités sont 99,3 % des foyers avec au moins un équipement numérique, mais 19,4 % connectés à Internet à domicile, à peine 3 % en zone rurale contre 43,8 % à Dakar (à vérifier). Le mode hors ligne contourne donc le principal goulot d'étranglement, sans être un simple confort."
+    },
+    {
+      "role": "user",
+      "content": "Starlink ne règle-t-il pas déjà le problème dans les villages ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Starlink fournit une connexion fixe et partagée, par exemple pour un toit, une borne ou une école. Un agent de santé qui marche entre les concessions, un paysan dans son champ ou une commerçante au marché ne sont pas sous cette antenne. Un modèle embarqué sur le téléphone, lui, accompagne la personne partout. Un autre point rappelé est que les modèles seront partout, et que le vrai défi reste la boucle construite autour du modèle."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment rendre un assistant IA accessible à quelqu'un qui n'a qu'un téléphone simple ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une piste évoquée est de passer par la ligne mobile : les utilisateurs appelleraient ou enverraient des SMS à un numéro court, sans dépendre du type de téléphone. Un obstacle technique est que la compression du réseau mobile ramène le signal à 8 kHz au lieu de 16 kHz, ce qui gêne la reconnaissance vocale. La solution proposée est d'entraîner les modèles de reconnaissance vocale sur de l'audio 8 kHz en mu-law."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quels modèles Gemma peut-on faire tourner en local ?"
+    },
+    {
+      "role": "assistant",
+      "content": "La famille comprend E2B, E4B, 12B, 26B en MoE et 31B dense, ce dernier étant le modèle phare. Selon la discussion, E2B et E4B tournent hors ligne sur mobile et IoT, E4B étant bon en usage agentique. Le 12B a été testé sur un Mac de 24 Go de RAM, et il est annoncé comme acceptant l'audio nativement. Ces informations sont à vérifier, car elles viennent de publications récentes."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quels types de commerces pourraient utiliser un ERP piloté par des agents IA ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Dans la discussion, les cas cités sont les restaurants, les boutiques de téléphonie ou de cosmétique, l'accueil des clients en banque, la gestion des files d'attente dans l'administration et les restaurants, ou encore l'accueil et les consultations dans les hôpitaux et cliniques. Le secteur informel est présenté comme la cible : il est peu digitalisé et ne veut pas recruter une caissière pour alléger ses coûts."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment progresser quand on débute en lisant des articles avancés ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un conseil de la discussion : lire des contenus avancés même sans tout comprendre. Comprendre 10 à 20 % d'un texte est déjà bien, et la compréhension augmente avec les lectures. Il cite la théorie des graphes ou les algorithmes de compression, utiles plus tard même sans les utiliser immédiatement."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Qu'est-ce qu'un agent IA, au-delà de « un LLM avec des tools dans une boucle » ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une définition proposée dans la discussion : un agent est un système d'optimisation qui cherche à minimiser un coût sur les trajectoires possibles pour résoudre un problème. Une trajectoire est une suite d'actions, comme un appel d'outil, et d'observations, comme le résultat renvoyé par l'environnement, par exemple un terminal. Dire qu'un modèle est meilleur revient à dire qu'il optimise mieux cet espace de trajectoires."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment mesurer la qualité d'un modèle d'agent ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Selon la discussion, on peut retenir le nombre de tokens consommés, la latence, et la qualité de la réponse finale, y compris sa robustesse. Un modèle qui résout la même tâche avec moins de tokens, sans perdre en qualité, est jugé meilleur. Mais le critère reste relatif : deux modèles peuvent résoudre le même problème avec des coûts très différents."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "L'agent explore-t-il plusieurs trajectoires avant de choisir, ou n'en génère-t-il qu'une ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Les deux cas existent. Par défaut, chaque tour est généré à partir des tours précédents, ce qui est une exploration implicite apprise à l'entraînement. Il est aussi possible d'explorer dans une boucle externe : générer plusieurs tentatives, puis garder la meilleure. Cette seconde approche est plus lente. Le papier cité sur ce sujet est « Scaling test-time compute » de Google."
+    },
+    {
+      "role": "user",
+      "content": "Quelle différence entre exploration et exploitation ?"
+    },
+    {
+      "role": "assistant",
+      "content": "On exploite quand l'agent choisit l'action la plus probable. On explore quand il choisit parfois une action moins probable. Cela peut faire trouver une solution plus vite."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Avec quels outils fait-on les graphiques des articles scientifiques ?"
+    },
+    {
+      "role": "assistant",
+      "content": "On peut les générer avec Python, par exemple avec matplotlib, puis les insérer dans son document LaTeX. Un agent comme Claude sait très bien le faire s'il a le droit d'utiliser matplotlib."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi le métier d'AI Engineer, et recrute-t-on ce profil au Sénégal ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Selon un praticien de la discussion, l'AI Engineer entraîne des modèles, optimise les services d'inférence avec des outils comme Triton Server, et implémente parfois des articles de recherche. La discussion ne dit pas si ce profil recrute au Sénégal."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment traduire « données » en wolof, pour parler de training data, validation data et test data ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une proposition dans la discussion traduit selon la fonction : training data se dit « Jàngukaay gi », validation data « Nattukaay gi », et test data « Wóoralukaay gi ». Le projet de banque terminologique SENTERMINO, mené avec des institutions partenaires, vise à combler ce manque de termes. Un membre suggère aussi d'emprunter le mot en l'adaptant à l'orthographe wolof, mais cette option a ses limites."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quels sont aujourd'hui les principaux défis de l'IA pour les langues à faibles ressources ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Trois défis reviennent. Les données : les corpus sont petits, souvent mal annotés, peu normalisés, et rarement accessibles gratuitement. Le calcul : un meilleur accès aux GPU et à une infrastructure locale faciliterait beaucoup le développement, surtout pour les cas d'usage. L'évaluation : il existe très peu de benchmarks et de jeux de test fiables, ce qui rend difficile de vérifier qui a réellement le meilleur modèle."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Pourquoi un agent vocal accessible par simple appel téléphonique est-il difficile à construire au Sénégal ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Les modèles de reconnaissance vocale sont entraînés en 16 kHz, alors que le réseau mobile compresse l'audio avec le codec G.711, ce qui rend la transcription plus difficile. Il faut donc adapter les modèles, par exemple par rééchantillonnage. Il n'existe pas non plus d'API accessible : Twilio ne prend pas en charge les numéros sénégalais, et aucune API d'opérateur comme Orange n'est disponible à ce jour selon la discussion. Une piste de startup est de construire une couche de téléphonie africaine."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelle infrastructure faut-il pour déployer un modèle de reconnaissance vocale à l'échelle nationale ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Selon un praticien de la discussion, on peut entraîner un modèle Whisper, puis le quantifier avec CTranslate2 pour le faire tourner sur plusieurs CPU ou GPU. À l'échelle nationale, la montée en charge est progressive et peut aller jusqu'à une centaine de GPU H100. Plusieurs modèles peuvent partager une même carte, avec des workers qui se répartissent la charge via ZeroMQ. Il souligne que ce travail relève davantage de l'ingénierie que de l'IA."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment obtenir un endorsement sur arXiv quand on publie pour la première fois ?"
+    },
+    {
+      "role": "assistant",
+      "content": "arXiv exige qu'un membre déjà établi valide le nouvel auteur, et l'endorsement dépend de la catégorie visée. Un membre explique qu'il ne peut endosser que pour une catégorie qui relève de son domaine. Il conseille d'envoyer une demande d'endorsement à un contact compétent, avec l'article et les liens vers les données, et de vérifier que la catégorie choisie reste bien en informatique."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment formaliser simplement un système agentique ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une formalisation proposée dans la discussion repose sur quatre notions : le contexte, les tours, et les messages de type appel d'outil, résultat d'outil et réponse. Selon son auteur, cette structure rend l'implémentation plus simple et plus robuste, et elle permet de gérer la mémoire de façon flexible."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelles bases en informatique étudier pour mieux résoudre des problèmes ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un praticien de la discussion cite : les structures de données, la théorie des automates, la théorie des graphes, le calcul numérique, les métaheuristiques, les algorithmes de compression et le traitement du signal. Ces notions aident à mieux aborder la résolution de problèmes, même si elles ne servent pas toutes directement au quotidien."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Un LLM doit-il contrôler directement un robot en passant par des tools ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un point de vue dans la discussion est que le monde physique demande un autre paradigme : de la reconnaissance de formes et une boucle de retour très rapide. Un modèle de fondation pour la robotique analyse la vidéo et les capteurs, puis généralise à de nouvelles tâches. Le LLM peut toutefois donner des instructions à ce modèle, sans être directement l'outil qui pilote le robot. Un autre point de vue voit là surtout un problème d'ingénierie, avec un protocole de communication et de synchronisation entre les composants."
+    },
+    {
+      "role": "user",
+      "content": "Comment un modèle peut-il réagir assez vite pour un robot ?"
+    },
+    {
+      "role": "assistant",
+      "content": "La piste décrite est d'apprendre, pendant l'entraînement et non en direct, une fonction qui relie l'état de l'environnement à l'état final du robot, par exemple avec un réseau de neurones. Déployé dans le robot, ce modèle répond instantanément, sans LLM intermédiaire. Le LLM reste à côté pour analyser les échecs et entraîner une version améliorée du modèle, qui remplace ensuite l'ancienne."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Faut-il supprimer CLAUDE.md, les MCP, les hooks et les skills pour un agent de code ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Dans la discussion, un argument est que les modèles récents n'ont plus besoin de ces couches : une simple boucle agentique suffit, surtout avec la recherche web pour rester cohérent. Un membre nuance : il faut garder un MCP quand un cas d'usage le demande, car beaucoup de services proposent des API plus complètes. Le bash est présenté comme l'outil le plus puissant sur un système Unix. Concernant les multi-agents, un avis est de les éviter, car ils créent des problèmes de concurrence comme les interblocages et les conditions de course."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment faire apprendre à un agent le style de code de son projet ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Deux pistes sont évoquées. La première est d'indexer ses propres codes dans une base vectorielle, pour que l'agent la consulte et s'appuie sur ce style lors de nouveaux projets. La seconde est de demander à l'agent de lire une base de code existante et de l'ajouter à son contexte de session. Une fois le style capté, l'avis est qu'on peut laisser l'agent travailler plus librement, en vérifiant surtout les conséquences fonctionnelles."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quel est le montant minimal pour acheter des tokens OpenAI ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un membre parle d'un montant entre 5 et 10 dollars. Cette information est à vérifier, car les conditions de recharge changent."
+    }
   ]
 ]
