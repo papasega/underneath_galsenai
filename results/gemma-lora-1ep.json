@@ -1,0 +1,87 @@
+{
+  "name": "gemma-lora-1ep",
+  "params_m": 4628.6,
+  "metrics": {
+    "n_turns": 10,
+    "bits_per_byte": 0.8542339826911683,
+    "nll_per_token": 2.5867800235748293,
+    "perplexity": 13.2869190819601,
+    "rouge_l": 0.19623967216979238,
+    "token_f1": 0.27180113141308293,
+    "distinct_2": 0.6879282982867257,
+    "length_ratio": 0.994564992718152,
+    "empty_rate": 0.0
+  },
+  "samples": [
+    {
+      "nll": 339.85968017578125,
+      "n_tokens": 118,
+      "ref_bytes": 551,
+      "pred": "Un membre rappelle que les MCP, les hooks et les skills sont des skills qui ont été développés avec Claude. Il est à vérifier si l'agent de code a besoin de supprimer les fichiers CLAUDE.md, les MCP, les hooks et les skills.",
+      "ref": "Dans la discussion, un argument est que les modèles récents n'ont plus besoin de ces couches : une simple boucle agentique suffit, surtout avec la recherche web pour rester cohérent. Un membre nuance : il faut garder un MCP quand un cas d'usage le demande, car beaucoup de services proposent des API plus complètes. Le bash est présenté comme l'outil le plus puissant sur un système Unix. Concernant les multi-agents, un avis est de les éviter, car ils créent des problèmes de concurrence comme les interblocages et les conditions de course."
+    },
+    {
+      "nll": 129.23455810546875,
+      "n_tokens": 62,
+      "ref_bytes": 282,
+      "pred": "Oui, Haskell est un langage puissant et syntaxiquement proche de C++, qui est souvent utilisé pour les applications d'accueil des utilisateurs. Il est aussi utilisé pour les applications d'accueil des utilisateurs.",
+      "ref": "Haskell est un langage purement fonctionnel, sans effets de bord, ce qui le rend élégant. Dans la discussion, il sert surtout à construire des compilateurs et des outils comme Pandoc. Pour le machine learning, Python avec des bibliothèques comme PyTorch reste le choix dominant."
+    },
+    {
+      "nll": 145.0322723388672,
+      "n_tokens": 61,
+      "ref_bytes": 255,
+      "pred": "Un modèle généraliste comme Gemini peut être utilisé pour l'apprentissage des bases de la langue, comme les conjugaisons, les structures de phrases et les bases de la grammaire. Un modèle dédié, comme l'Odoo.ai ou l'Odoo.ai, est moins généraliste, mais peut offrir une meilleure compréhension des nuances de la langue, comme les structures de phrases, les structures de phrases, et les structures de phrases.",
+      "ref": "Gemini est déjà très bon sur les langues peu dotées, mais son wolof ne sera pas aussi propre qu'avec un modèle dédié. Ça reste bien mieux que rien, et l'infrastructure est gérée par le fournisseur, donc pas besoin de déployer soi-même des GPU."
+    },
+    {
+      "nll": 100.73606872558594,
+      "n_tokens": 45,
+      "ref_bytes": 213,
+      "pred": "Oui, Soynade est un modèle qui parle français et anglais avec un ton sénégalais.",
+      "ref": "Selon un test partagé dans la discussion, oui : il alterne français et anglais avec un ton sénégalais. Le modèle est présenté comme open source, donc déployable sur sa propre infrastructure (à vérifier)."
+    },
+    {
+      "nll": 722.584228515625,
+      "n_tokens": 274,
+      "ref_bytes": 1118,
+      "pred": "Un cas évoqué est de connecter un agent vocal à un réseau mobile avec ASR (Whisper, Whisper-Chat, ou Whisper-Chat-Whisper-Chat) pour le transcription, puis le traitement de la requête. Un cas de base est de connecter un agent vocal à un réseau mobile avec ASR, puis le traitement de la requête. Un cas de base est de connecter un agent vocal à un réseau mobile avec ASR, puis le traitement de la requête.",
+      "ref": "Les difficultés principales :\n1. Les modèles ASR sont entraînés sur de l'audio 16 kHz, alors que la téléphonie utilise un autre standard (G.711). Il faut donc adapter l'audio avec des algorithmes de downsampling, etc. Tant que tu n'as pas un modèle capable d'écouter le réseau mobile, impossible de brancher un LLM.\n2. Le LLM doit aussi comprendre un wolof bruité, mais c'est un autre problème.\n3. Le reste, c'est une bonne boucle agentique.\n\nCôté modèle, tu peux entraîner un Whisper puis le quantiser avec CTranslate2 pour le déployer sur plusieurs CPU ou GPU. À grande échelle, on peut monter progressivement jusqu'à une centaine de GPU H100 ; avec de la programmation parallèle, on fait tourner plusieurs modèles sur une même carte (jusqu'à environ 400 modèles ASR en parallèle), avec plusieurs workers qui se partagent le GPU et ZeroMQ en inproc pour le load balancing.\n\nOn est surtout face à un problème d'ingénierie : communiquer avec les systèmes mobiles est difficile, Twilio ne supporte pas les numéros sénégalais et les opérateurs ne proposent pas d'API pour ça à ce jour."
+    },
+    {
+      "nll": 109.91986083984375,
+      "n_tokens": 54,
+      "ref_bytes": 244,
+      "pred": "Un cas évoqué est de refroidir un data center avec de l'eau de mer, qui est un fluide de refroidissement moins chère que l'eau douce. Un cas cité est de refroidir un data center avec de l'eau de mer en utilisant des tours de refroidissement. Un autre cas est de refroidir un data center avec de l'eau de rivière, qui est un fluide de refroidissement moins chère que l'eau douce.",
+      "ref": "Un membre explique que, selon ses informations, l'eau de mer est trop corrosive pour les composants, ce qui réduit leur durée de vie. Il ajoute que les data centers qui l'utilisent sont peu nombreux, et que cette information est à vérifier."
+    },
+    {
+      "nll": 120.61156463623047,
+      "n_tokens": 44,
+      "ref_bytes": 192,
+      "pred": "Les outils mentionnés dans la discussion sont les logiciels de graphiques, comme les graphiques des articles scientifiques, qui sont des outils de visualisation de données. Les outils mentionnés sont les graphiques des articles scientifiques, qui sont des outils de visualisation de données.",
+      "ref": "On peut les générer avec Python, par exemple avec matplotlib, puis les insérer dans son document LaTeX. Un agent comme Claude sait très bien le faire s'il a le droit d'utiliser matplotlib."
+    },
+    {
+      "nll": 186.30886840820312,
+      "n_tokens": 82,
+      "ref_bytes": 363,
+      "pred": "Un agent WhatsApp qui accepte les messages audio est possible, mais il nécessite une plateforme de développement, comme les API de WhatsApp Business. Un cas de base est de créer un bot qui accepte les messages audio et les transcrète, puis les transmet à un modèle de transcription.\n\nLes étapes sont :\n1. Créer un compte WhatsApp Business.\n2. Déployer sur un serveur, par exemple avec Flask ou Node.js.\n3. Utiliser les API de WhatsApp Business.\n4. Gérer les messages audio en les transcrétant avec Whisper.\n5. Gérer les messages audio en les transmettant à un modèle de transcription.\n6. Gérer les messages audio en les transmettant à un modèle de transcription.\n\nUn cas de base est de créer un bot qui accepte les messages audio et les transcrète, puis les transmet à un modèle de transcription.",
+      "ref": "Avec une API de modèle, le principe est le suivant : détecter qu'un message est un audio, le router vers un modèle de transcription (Whisper est cité en exemple), laisser l'agent produire une réponse textuelle, puis convertir cette réponse en audio et la renvoyer. Il faut aussi gérer la conversion des formats audio de WhatsApp, comme .oga, .opus ou .ogg."
+    },
+    {
+      "nll": 62.31298065185547,
+      "n_tokens": 36,
+      "ref_bytes": 167,
+      "pred": "Oui, les modèles Anthropic acceptent l'audio en entrée. Les modèles Claude 3 Opus et Claude 3 Sonnet acceptent les fichiers audio.",
+      "ref": "Selon un membre de la discussion, non : ces modèles ne prennent pas l'audio en entrée. Cette information est à vérifier, car les capacités des modèles évoluent."
+    },
+    {
+      "nll": 566.708740234375,
+      "n_tokens": 184,
+      "ref_bytes": 809,
+      "pred": "Un membre rappelle qu'un modèle open source est à l'usage de tous, et que l'abonnement est à l'usage de l'utilisateur. Un membre rappelle qu'un modèle open source est à l'usage de tous, et que l'abonnement est à l'usage de l'utilisateur.",
+      "ref": "Ça dépend du cas d'usage.\n\nPour avancer vite en tant que développeur, souvent mieux vaut payer un abonnement : acheter des GPU pour faire tourner un modèle open source qui met 2 minutes par réponse coûte plus cher à contourner que le prix d'un plan à 100 $. Du côté purement business, le closed source est plus simple. Les modèles closed ont aussi une avance importante, donc un modèle local risque d'être à la traîne face à ce que les gens peuvent obtenir ailleurs.\n\nL'open source reste très utile : il rend la technologie accessible à tous, il est précieux pour la recherche, et pour des usages locaux ou embarqués (confidentialité, hors-ligne). Le plus sain pour l'écosystème open est d'avoir sa propre direction plutôt que de se contenter de répliquer chaque nouveauté du closed."
+    }
+  ]
+}
