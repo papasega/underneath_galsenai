@@ -1,5 +1,7 @@
 import re,glob,collections,sys
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from pathlib import Path
 D=str(Path(__file__).resolve().parent.parent/'data/whatsapp_questions_reponses')+'/'
 src=open(glob.glob(D+'Discussion*.txt')[0],encoding='utf8').read().split('\n')
 p=re.compile(r'^(\d\d)/(\d\d)/(\d{4}), (\d\d):(\d\d) - ([^:]+?): ?(.*)')
@@ -8,17 +10,7 @@ for l in src:
     m=p.match(l)
     if m: msgs.append([f'{m[3]}-{m[2]}-{m[1]}',int(m[4]),m[6],m[7]])
     elif msgs: msgs[-1][3]+='\n'+l
-THEMES={
- 'LLM / modèles (GPT, Claude, Gemini, Llama…)':r'\b(llm|gpt|claude|gemini|llama|opus|sonnet|haiku|mistral|qwen|deepseek|gemma|openai|anthropic|modèles?|models?)\b',
- 'Agents / outils / Claude Code / Codex':r'\b(agents?|agentic|claude code|codex|cursor|mcp|skills?|tools?|outils?|copilot)\b',
- 'Entraînement / fine-tuning / RL':r'\b(fine.?tun\w*|lora|sft|rlhf|grpo|dpo|training|entra[iî]n\w*|pretrain\w*|distill\w*|dataset|données|data)\b',
- 'NLP langues locales (wolof…)':r'\b(wolof|pulaar|sérère|serere|nlp|langues?|traduction|tokeni\w*|asr|tts)\b',
- 'Python / code / dev':r'\b(python|pytorch|tensorflow|code|github|git|api|docker|rust|mojo|jax|bug|script|package|framework)\b',
- 'Carrière / emploi / études':r'\b(stage|emploi|job|recrut\w*|cv|master|thèse|these|doctorat|phd|bourse|formation|cours|université|ucad|ugb|école|ecole|carrière|salaire)\b',
- 'Maths / théorie / recherche':r'\b(papier|paper|arxiv|maths?|math[ée]matiques|algèbre|gradient|transformers?|attention|théorie|recherche|benchmark)\b',
- 'Infra / GPU / calcul':r'\b(gpu|cuda|h100|a100|supercalculateur|calcul|cloud|colab|kaggle|vram|inférence|inference|serveur)\b',
- 'Événements / communauté / Sénégal':r'\b(meetup|hackathon|conférence|conference|événement|evenement|atelier|workshop|galsen|sénégal|senegal|dakar|communauté|afrique)\b',
-}
+from themes import THEMES
 cre={k:re.compile(v,re.I) for k,v in THEMES.items()}
 tot=collections.Counter();words=collections.Counter();q=collections.Counter();links=collections.Counter();longm=collections.Counter()
 days=collections.defaultdict(set);month=collections.Counter();hour=collections.Counter()

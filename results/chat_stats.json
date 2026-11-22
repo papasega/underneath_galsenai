@@ -1,0 +1,196 @@
+{
+  "messages": 3383,
+  "voices": 103,
+  "themes": [
+    [
+      "LLM / modèles",
+      9.518179130948862
+    ],
+    [
+      "Agents / outils",
+      6.237067691398168
+    ],
+    [
+      "Code / Python",
+      3.9018622524386637
+    ],
+    [
+      "NLP langues locales",
+      2.926396689328998
+    ],
+    [
+      "Événements / communauté",
+      2.7785988767366243
+    ],
+    [
+      "Entraînement / RL",
+      2.7490393142181495
+    ],
+    [
+      "Maths / recherche",
+      2.2169671888856044
+    ],
+    [
+      "Carrière / études",
+      2.039609813774756
+    ],
+    [
+      "Infra / GPU",
+      1.5370972509606857
+    ]
+  ],
+  "months": [
+    [
+      "2026-04",
+      198
+    ],
+    [
+      "2026-05",
+      55
+    ],
+    [
+      "2026-06",
+      1558
+    ],
+    [
+      "2026-07",
+      506
+    ],
+    [
+      "2026-08",
+      189
+    ],
+    [
+      "2026-09",
+      612
+    ],
+    [
+      "2026-10",
+      212
+    ],
+    [
+      "2026-11",
+      53
+    ]
+  ],
+  "top_voices": [
+    {
+      "voice": "U10",
+      "messages": 1075,
+      "share": 0.3177652970736033,
+      "words_per_msg": 19.27627906976744,
+      "theme": "Agents / outils",
+      "distinctive": [
+        "humanité",
+        "action",
+        "donner"
+      ]
+    },
+    {
+      "voice": "U23",
+      "messages": 910,
+      "share": 0.26899201891812,
+      "words_per_msg": 15.648351648351648,
+      "theme": "Code / Python",
+      "distinctive": [
+        "etait",
+        "ailleurs",
+        "plutot"
+      ]
+    },
+    {
+      "voice": "U69",
+      "messages": 280,
+      "share": 0.08276677505172923,
+      "words_per_msg": 9.132142857142858,
+      "theme": "Agents / outils",
+      "distinctive": [
+        "apres",
+        "contexte",
+        "genre"
+      ]
+    },
+    {
+      "voice": "U27",
+      "messages": 141,
+      "share": 0.04167898315104936,
+      "words_per_msg": 22.425531914893618,
+      "theme": "Infra / GPU",
+      "distinctive": [
+        "risque",
+        "expertise",
+        "experts"
+      ]
+    },
+    {
+      "voice": "U65",
+      "messages": 109,
+      "share": 0.032219923145137455,
+      "words_per_msg": 16.908256880733944,
+      "theme": "Événements / communauté",
+      "distinctive": [
+        "scolaire",
+        "sénégalais",
+        "opportunités"
+      ]
+    },
+    {
+      "voice": "U29",
+      "messages": 76,
+      "share": 0.022465267514040793,
+      "words_per_msg": 17.776315789473685,
+      "theme": "NLP langues locales",
+      "distinctive": [
+        "accord",
+        "question"
+      ]
+    },
+    {
+      "voice": "U28",
+      "messages": 72,
+      "share": 0.021282885013301802,
+      "words_per_msg": 10.083333333333334,
+      "theme": "Carrière / études",
+      "distinctive": [
+        "dernière",
+        "master"
+      ]
+    },
+    {
+      "voice": "U02",
+      "messages": 65,
+      "share": 0.019213715637008574,
+      "words_per_msg": 15.953846153846154,
+      "theme": "Agents / outils",
+      "distinctive": [
+        "tokens",
+        "jeunes",
+        "agent"
+      ]
+    },
+    {
+      "voice": "U36",
+      "messages": 61,
+      "share": 0.018031333136269583,
+      "words_per_msg": 23.131147540983605,
+      "theme": "Carrière / études",
+      "distinctive": [
+        "tourne",
+        "internet",
+        "offline"
+      ]
+    },
+    {
+      "voice": "U89",
+      "messages": 60,
+      "share": 0.017735737511084836,
+      "words_per_msg": 55.8,
+      "theme": "Entraînement / RL",
+      "distinctive": [
+        "output",
+        "images",
+        "conversation"
+      ]
+    }
+  ]
+}
