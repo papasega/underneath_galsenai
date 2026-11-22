@@ -21,6 +21,10 @@ Same 10 assistant turns of the held-out validation conversations (`data/private/
 | gemma-lora-1ep-rag-dense | 4629M | 0.705 | 8.5 | 0.201 | 0.319 | 0.87 | 1.89 | 0% | 0.58 | 80% | + LoRA + RAG: embeddinggemma-2 top-4 passages |
 | gemma-lora-1ep-rag-hybrid | 4629M | 0.722 | 8.9 | 0.180 | 0.296 | 0.82 | 1.96 | 0% | 0.57 | 80% | + LoRA + RAG: BM25 + embeddinggemma-2 (RRF) top-4 |
 | gemma-lora-1ep-rag-oracle | 4629M | 0.701 | 8.4 | 0.254 | 0.375 | 0.91 | 1.34 | 0% | 0.53 | 80% | + LoRA + RAG: the single best passage (upper bound, uses the reference) |
+| gemma-full-ep1 | 4629M | 1.083 | 26.6 | 0.125 | 0.163 | 0.76 | 3.92 | 0% | – | – | full fine-tuning (top blocks, config_gemma_full.yml) |
+| gemma-full-merge-w40 | 4629M | 0.864 | 13.7 | 0.118 | 0.182 | 0.66 | 7.55 | 0% | – | – | bf16 base + 40 % full fine-tuned weights, 60 % base |
+| gemma-full-merge-w60 | 4629M | 0.905 | 15.5 | 0.163 | 0.235 | 0.88 | 0.76 | 0% | – | – | bf16 base + 60 % full fine-tuned weights, 40 % base |
+| gemma-base-bf16 | 4629M | 1.557 | 111.7 | 0.078 | 0.137 | 0.86 | 8.40 | 0% | – | – | Gemma 4 E2B bf16, no fine-tuning (fair base for the full models) |
 
 ## RAG: retrieval quality (same turns)
 
@@ -86,6 +90,18 @@ Il n'y a pas de réponse unique (oui ou non). Voici une analyse détaillée de l
 - *gemma-lora-1ep-rag-dense*: Un membre suggère de supprimer CLAUDE.md, mcp, hooks et skills, car les nouveaux modèles n'en ont pas besoin et qu'une simple boucle agentique suffit, surtout s'ils ont accès à la recherche web [1][2]. Un autre avis est qu'il faut éviter les multi-agents, car ils sont utiles à l'usage, mais créent d
 - *gemma-lora-1ep-rag-hybrid*: Un membre suggère de supprimer CLAUDE.md, mcp, hooks et skills, car les nouveaux modèles n'en ont pas besoin et qu'une simple boucle agentique suffit, surtout s'ils ont accès à la recherche web [1][2]. Un autre avis est qu'il faut supprimer les skills et les skills, car ils sont utiles pour le conte
 - *gemma-lora-1ep-rag-oracle*: Un membre suggère de supprimer CLAUDE.md, mcp, hooks et skills, car les nouveaux modèles n'en ont pas besoin et qu'une simple boucle agentique suffit, surtout si l'agent a accès à la recherche web [1]. Un autre avis est qu'il faut éviter les multi-agents, car ils sont utiles à l'usage, créant des pr
+- *gemma-full-ep1*: Dans la discussion, il faut donc décider de l'outil. Il n'est pas une chose de le supprimer. Il n'est pas une chose de le supprimer.
+- *gemma-full-merge-w40*: C'est une question de conception et de gestion de mémoire, et la réponse dépend de la structure de l'agent et de la manière dont il gère ses outils.
+
+Dans la discussion, il faut distinguer les éléments :
+1. **CLAUDE.md** : Un fichier de documentation, de contexte ou de règles.
+2. **MCP** : Un outil,
+- *gemma-full-merge-w60*: Dans la discussion, il faut donc décider si l'agent de code n'a pas besoin de ces éléments. Il n'existe pas de réponse plus simple.
+- *gemma-base-bf16*: C'est une question qui dépend entièrement de l'**état actuel** de votre agent de code, de ses **objectifs**, et de la **phase de développement** où il se trouve.
+
+**La réponse courte est : Non, il ne faut pas supprimer ces éléments sans une analyse approfondie.**
+
+Chacun de ces composants joue un rô
 
 **Reference 2:** Haskell est un langage purement fonctionnel, sans effets de bord, ce qui le rend élégant. Dans la discussion, il sert surtout à construire des compilateurs et des outils comme Pandoc. Pour le machine learning, Python avec des bibliothèques comme PyTorch reste le choix dominant.
 
@@ -108,6 +124,12 @@ L'intérêt de Haskell en IA réside moins dans la création de modèles neurona
 - *gemma-lora-1ep-rag-dense*: Haskell est jugé plus élégant que Python, qui est jugé plus simple à apprendre, et il est jugé plus simple à comprendre que Julia [1][2]. Un membre estime que l'architecture logicielle et les bases de la programmation sont essentielles pour comprendre les bases de la programmation et surtout l'archi
 - *gemma-lora-1ep-rag-hybrid*: Haskell est jugé élégant, et l'extrait [3] indique qu'il reste le langage préféré de l'auteur, même si l'on en voit peu d'usage. L'extrait [1] mentionne que l'on ne comprend pas encore son intérêt en IA, et l'extrait [2] souligne que l'on ne le voit pas encore en IA, mais que l'on en voit aussi beau
 - *gemma-lora-1ep-rag-oracle*: Haskell est jugé un langage élégant, comme le montre son code, et il est jugé plus apprécié que les autres comme Python, Java et JavaScript [1]. Un membre estime que le langage est purement fonctionnel, sans side effects, et qu'il est jugé plus apprécié que les autres comme Python, Java et JavaScrip
+- *gemma-full-ep1*: Dans la discussion, l'intérêt est de ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne jamais ne 
+- *gemma-full-merge-w40*: C'est une question très pertinente. Il est vrai que l'IA est un domaine très large, et il faut donc bien comprendre comment le langage de programmation est utilisé dans ce domaine.
+
+La réponse est un **oui, absolument : l'IA est un domaine où Haskell est très utile, et il est même plus élégant et pl
+- *gemma-full-merge-w60*: Il est peu probable qu'il n' existe pas d'intérêt pour l'IA. Il est plus probable qu'il existe une piste de développement plus simple : l'IA est plus accessible à tous. Il est peu probable qu'il n'existe pas d'intérêt pour l'IA. Il est peu probable qu'il n'existe pas d'estime.
+- *gemma-base-bf16*: C'est une excellente question. L'intérêt de Haskell en Intelligence Artificielle (IA) n'est pas aussi évident que celui de Python (qui domine actuellement le domaine), mais il est **profond et très pertinent** pour des aspects spécifiques de l'IA où la **fiabilité, la performance et la complexité du
 
 **Reference 3:** Gemini est déjà très bon sur les langues peu dotées, mais son wolof ne sera pas aussi propre qu'avec un modèle dédié. Ça reste bien mieux que rien, et l'infrastructure est gérée par le fournisseur, donc pas besoin de déployer soi-même des GPU.
 
@@ -130,4 +152,16 @@ La réponse n'est pas un simple oui ou non, mais dépend entièrement de **la t�
 - *gemma-lora-1ep-rag-dense*: Un membre estime que l'outil est déjà très performant pour les langues à faible ressources, comme l'est Gemini, et propose de l'utiliser pour l'apprentissage de l'écriture, comme l'on l'utilise avec Soynade. Un autre membre souligne que l'infrastructure est chez Google, ce qui évite de déployer des 
 - *gemma-lora-1ep-rag-hybrid*: Un membre suggère d'utiliser Soynade, qui est open source et peut parler français et anglais avec un ton sénégalais, et propose de le déployer sur ses propres infrastructures [4]. Un autre membre estime que Gemini est déjà très performant pour les langues à faible ressources, comme l'Awa ou Soynade,
 - *gemma-lora-1ep-rag-oracle*: Un membre suggère qu'un modèle généraliste comme Gemini est déjà très performant pour les langues à faible ressources, comme l' langue locale, et propose de l'utiliser pour l'apprentissage des bases de la langue, même si l'audio n'est pas parfait [1]. Un autre membre souligne que l'infrastructure d'
+- *gemma-full-ep1*: Dans la discussion, il faut donc distinguer les modèles de manière plus plus plus. Il faut donc donc donc donc.
+- *gemma-full-merge-w40*: C'est une question de conception et de performance. Il existe une distinction entre les modèles généralistes et les modèles dédiés.
+
+Pour le wolof, il est plus probable qu'un modèle dédié, ou une version plus fine-tunée d'un modèle généraliste, soit plus performant.
+
+Voici les arguments pour les deu
+- *gemma-full-merge-w60*: Il est peu probable qu'il existe une version dédiée à ce jour. Il est plus probable de le voir comme une compétence de l' modèle généraliste.
+- *gemma-base-bf16*: C'est une excellente question qui touche au cœur des capacités des grands modèles de langage (LLM) en matière de langues à faible ressource.
+
+La réponse n'est pas un simple oui ou non ; elle dépend fortement de **l'objectif** que vous souhaitez atteindre et de la **qualité** requise.
+
+Voici une anal
 

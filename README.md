@@ -135,8 +135,10 @@ Every `data/private/models/gemma4-full-*` directory (including the `merge-w<pct>
 Outputs (`results/*full*`, `results/*merge*`, `data/private/`) are git-ignored. Useful variants: `./scripts/run_full.sh ckpt STEP`
 (checkpoint at iteration STEP), `FULL=ep1 ./scripts/run_full.sh merge 40 60` (merge a specific fused model).
 
-Outcome: full fine-tuning did not beat LoRA on validation loss (best 3.42 after 1 epoch, then overfits; LoRA 1 epoch: 2.66), and
-training all blocks diverges. LoRA stays the served model; see `results/eval_compare.md`.
+Outcome (10 validation turns, table in `results/eval_compare.md`, per-model details in `results/gemma-full-*.json`): full
+fine-tuning (BPB 1.083, val loss 3.42 vs 2.66 for LoRA) overfits after 1 epoch, and training all blocks diverges. Merging with
+the base helps: `merge-w40` BPB 0.864, `merge-w60` ROUGE-L 0.163 / F1 0.235. None beats `gemma-lora-1ep` (BPB 0.854,
+ROUGE-L 0.196, F1 0.272), so LoRA stays the served model. Knowledge retention is not measured by these metrics.
 
 ## RAG (retrieval over the anonymized chat)
 
