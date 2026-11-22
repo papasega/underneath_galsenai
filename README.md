@@ -1,6 +1,10 @@
 # GalsenAI Underneath
 ### WhatsApp Discussions Questions/Réponses
 
+<p align="center">
+  <img src="assets/wordcloud.png" alt="Word cloud of the anonymized chat, in the shape of Senegal" width="640">
+</p>
+
 Turn the GalsenAI "Questions/Réponses" WhatsApp discussion into a small French chat assistant, and compare two ways
 of getting there on one laptop (Apple M5 Pro, 24 GB):
 
@@ -137,8 +141,6 @@ Optional environment variables: `MODEL`, `SYSTEM_PROMPT`, `API_KEY`. Standard li
 
 Computed on the **anonymized** chat (`scripts/chat_figures.py`, so safe to publish): 3383 messages, 103 members.
 Voices are the random labels of the anonymized file (`U10`...), not names; they are stable only for that file.
-
-![Word cloud of the anonymized chat, in the shape of Senegal](assets/wordcloud.png)
 
 **Themes** (share of messages mentioning each theme, keyword detection, a message can count for several):
 
