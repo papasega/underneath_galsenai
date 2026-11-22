@@ -1,0 +1,238 @@
+[
+  [
+    {
+      "role": "user",
+      "content": "À quoi servent vraiment les petits modèles open source qui tournent en local (type Gemma avec LiteRT-LM) ? Est-ce qu'ils peuvent remplacer un Claude Code ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Non, ils ne sont pas faits pour remplacer des modèles comme Sonnet ou Opus pour le développement. Leur cas d'usage est plus restreint : tourner sur des appareils à faible puissance de calcul (IoT, téléphone), optimisés pour le CPU. LiteRT-LM vise justement ça, et il existe aussi en C++.\n\nLes avantages du edge :\n1. Pas besoin d'internet, donc pas de latence réseau.\n2. Tes données restent sur ton appareil au lieu d'être envoyées dans un datacenter.\n\nÇa permet par exemple à un agriculteur en zone rurale de piloter des outils dans sa langue locale, même sans connexion. Côté pratique, un modèle comme gemma4:e4b tourne sur un simple CPU avec une latence correcte, et on peut même bricoler une petite boucle agentique à la Claude Code en local, avec quelques limites."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Open source ou closed source : vaut-il mieux faire tourner un modèle open source soi-même ou payer un abonnement ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Ça dépend du cas d'usage.\n\nPour avancer vite en tant que développeur, souvent mieux vaut payer un abonnement : acheter des GPU pour faire tourner un modèle open source qui met 2 minutes par réponse coûte plus cher à contourner que le prix d'un plan à 100 $. Du côté purement business, le closed source est plus simple. Les modèles closed ont aussi une avance importante, donc un modèle local risque d'être à la traîne face à ce que les gens peuvent obtenir ailleurs.\n\nL'open source reste très utile : il rend la technologie accessible à tous, il est précieux pour la recherche, et pour des usages locaux ou embarqués (confidentialité, hors-ligne). Le plus sain pour l'écosystème open est d'avoir sa propre direction plutôt que de se contenter de répliquer chaque nouveauté du closed."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment construire un agent disponible sur WhatsApp qui accepte les messages vocaux et exécute les opérations demandées ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Le flux classique est le suivant :\n1. Ton code détecte que le message reçu est un audio.\n2. Il l'envoie à un modèle de transcription (Whisper d'OpenAI, ou Google Speech-to-Text par exemple).\n3. Le texte transcrit est transmis à ton agent, qui exécute l'opération ou génère une réponse textuelle.\n4. Si tu veux répondre en vocal, tu convertis la réponse en audio avant de la renvoyer.\n\nPoints d'attention : les modèles d'Anthropic ne gèrent pas l'audio, donc il faut passer par un middleware de transcription. Les audios WhatsApp arrivent dans des formats comme .oga, .opus ou .ogg, il faudra donc gérer la conversion/compatibilité de format. Si tu utilises une plateforme comme Salesforce Agentforce, des actions natives gèrent déjà la transcription : il suffit d'adapter les extensions de fichiers WhatsApp, puis de rediriger le texte vers l'agent."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Entre l'abonnement Claude et Codex (GPT-5.5), lequel tient le plus longtemps avant d'atteindre la limite d'usage ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Codex GPT-5.5 est excellent en software engineering, probablement même meilleur que Claude Sonnet sur ce point, mais il s'épuise vite : en quelques minutes à quelques heures on peut atteindre la limite et devoir attendre une semaine. Côté Claude, les limites ont récemment été relevées, donc l'agent s'arrête beaucoup moins brusquement. Vérifie les conditions actuelles de l'abonnement, qui changent régulièrement. Dans un sondage informel, la grande majorité des gens conseillait de rester sur Claude."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Où trouver le livre « AI Engineering » quand on est à Dakar ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Il est peu probable de le trouver en librairie locale. Une alternative est de le commander via shopmeaway, qui passe par Amazon et se charge de la livraison. Il existe aussi une version française, moins chère. Et si tu es à l'UCAD, l'UGB, au Sine Saloum ou à l'UAM, la plateforme Scholarvox de ton université donne accès à des millions de livres en libre accès."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi exactement un skill pour un agent comme Claude Code ? Un simple prompt en markdown ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Non, ce n'est pas qu'un prompt. Dans la proposition d'Anthropic, un skill est un package de compétences : un dossier qui contient un fichier SKILL.md, et éventuellement des scripts, des ressources, des références, etc. Le SKILL.md joue le rôle de point d'entrée (un peu comme un README pour le LLM) et son en-tête YAML (frontmatter) permet à l'agent de charger dynamiquement ce dont il a besoin.\n\nL'analogie avec Python aide : un module peut tenir dans un seul fichier, mais quand il se complexifie on en fait un package. Ici, c'est le LLM qui « exécute » le skill, comme Python exécute un script. Un skill peut d'ailleurs ne contenir que le SKILL.md, ou ce fichier plus des scripts, selon la complexité de la tâche."
+    },
+    {
+      "role": "user",
+      "content": "Et pourquoi Anthropic a créé les skills ? Pourquoi pas simplement des commandes ou un README ?"
+    },
+    {
+      "role": "assistant",
+      "content": "À l'origine, c'était pour résoudre l'explosion de contexte causée par les MCP. Le frontmatter du SKILL.md permet un chargement progressif (progressive loading) : l'agent ne lit d'abord que les en-têtes, et charge le contenu complet seulement quand c'est utile, ce qui évite de saturer la fenêtre de contexte.\n\nAutres points :\n- Les scripts d'un skill font gagner des tokens, car l'agent les lance sans avoir à les lire.\n- Un skill généralise les commandes et les prompts, qui ont fini par être absorbés par les skills : il reste surtout agents et skills.\n- L'idée est proche de la mémoire procédurale.\n- Claude Code possède un outil skill() qui scanne le répertoire et charge les frontmatter ; c'est pour ça qu'il attend un fichier nommé SKILL.md. Avec un très grand contexte, tu pourrais obtenir un comportement proche en demandant à l'agent de lire un autre fichier via ses instructions, mais le nom SKILL.md est la convention attendue par l'outil."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi un metaskill, et à quoi ça sert ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un metaskill est un skill qui gère d'autres skills. Il expose des actions comme search_skill, pull_skill, install_skill et upload_skill. Avec ça, l'agent peut chercher dans une base (par exemple vectorielle) de skills, les télécharger, les installer, en créer d'autres et les publier, un peu comme les meta-MCP : on monte en abstraction.\n\nÇa répond aussi à des limites pratiques : si tu modifies un skill en cours de session, tu dois le recharger, ce qui peut casser le cache_control d'Anthropic, et il y aurait une limite d'environ 20 skills chargés. D'où l'intérêt d'un système de recherche/chargement/déchargement. Attention cependant : les bases de skills partagées manquent encore de rigueur, avec pas mal de risques de prompt injection. Et en pratique le LLM peut parfois ignorer un skill s'il estime en savoir plus ; certains mettent des règles marquées « ABSOLUTE RULE » dans leurs prompts et skills pour limiter ça."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelles sont les tailles de la famille Gemma 4, et lesquelles tournent en local sur mobile ?"
+    },
+    {
+      "role": "assistant",
+      "content": "La gamme complète : E2B, E4B, 12B, 26B A4B (MoE) et 31B Dense. Le 31B est le flagship dense et domine nettement sur les benchmarks, comme attendu.\n\nEn local : les E2B et E4B tournent hors-ligne sur mobile et IoT, notamment avec LiteRT-LM, et l'E4B a du répondant en usage agentique. Le 12B, lui, a été testé sur un Mac avec 24 Go de RAM et fonctionne parfaitement. Avec un bon fine-tuning, un E2B peut donner de bons résultats en local, par exemple pour des gadgets hors-ligne à usage éducatif."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Qu'est-ce que l'exploration et l'exploitation pour un agent LLM ? Est-ce qu'il explore vraiment plusieurs trajectoires avant de répondre ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une trajectoire est une suite (a1,o1), (a2,o2), …, (an,on) d'actions et d'observations. À chaque étape, l'agent attribue une probabilité (entre 0 et 1) à chaque action suivante. S'il choisit toujours la plus probable, il fait de l'exploitation ; s'il choisit parfois une action moins probable, il fait de l'exploration, ce qui permet parfois de trouver la solution plus vite.\n\nQuant à savoir s'il explore plusieurs trajectoires, il y a deux niveaux :\n1. Une exploration implicite : générer le tour n en s'appuyant sur les n-1 tours précédents revient déjà à chercher le meilleur tour n pour compléter la trajectoire. Elle vient de l'entraînement.\n2. Une exploration externe, dans une boucle extérieure : l'agent génère x tentatives puis choisit la meilleure. Elle est plus lente, mais explicite. L'article de Google sur le scaling du test-time compute en donne des exemples.\n\nLes modèles récents sont assez bons pour faire cela de façon presque implicite."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment comparer deux modèles sur un même problème ? Est-ce que moins de tokens consommés veut dire meilleur modèle ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Pas automatiquement. Si un modèle résout la même tâche avec moins de tokens sans perdre en qualité, il est meilleur sur ce critère. Mais la qualité se mesure aussi par la robustesse de la solution finale et la pertinence du contenu de la réponse. Pour un problème donné, on regarde généralement :\n- le nombre de tokens consommés,\n- la latence,\n- la qualité de la réponse (a-t-elle atteint l'objectif de l'utilisateur ?).\n\nC'est relatif : un modèle peut résoudre le problème avec 100k tokens et un autre avec 500k, la comparaison dépend de ce qui compte pour ton cas d'usage."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi le travail d'un AI Engineer au quotidien ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Ça ressemble beaucoup à de l'ingénierie logicielle avec une composante IA :\n- entraîner des modèles ;\n- optimiser les services d'inférence (avec des outils comme Triton Inference Server de NVIDIA, qui sert des modèles ML, ou ZeroMQ) ;\n- parfois implémenter des papiers de recherche.\n\nUn conseil : concentre-toi sur le fait d'être un bon ingénieur, tu pourras ensuite t'adapter facilement. Au final, c'est un computer scientist qui manipule des algorithmes au quotidien."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Je voudrais brancher un agent vocal sur le réseau téléphonique mobile avec de l'ASR. Quelles sont les difficultés techniques et comment déployer à grande échelle ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Les difficultés principales :\n1. Les modèles ASR sont entraînés sur de l'audio 16 kHz, alors que la téléphonie utilise un autre standard (G.711). Il faut donc adapter l'audio avec des algorithmes de downsampling, etc. Tant que tu n'as pas un modèle capable d'écouter le réseau mobile, impossible de brancher un LLM.\n2. Le LLM doit aussi comprendre un wolof bruité, mais c'est un autre problème.\n3. Le reste, c'est une bonne boucle agentique.\n\nCôté modèle, tu peux entraîner un Whisper puis le quantiser avec CTranslate2 pour le déployer sur plusieurs CPU ou GPU. À grande échelle, on peut monter progressivement jusqu'à une centaine de GPU H100 ; avec de la programmation parallèle, on fait tourner plusieurs modèles sur une même carte (jusqu'à environ 400 modèles ASR en parallèle), avec plusieurs workers qui se partagent le GPU et ZeroMQ en inproc pour le load balancing.\n\nOn est surtout face à un problème d'ingénierie : communiquer avec les systèmes mobiles est difficile, Twilio ne supporte pas les numéros sénégalais et les opérateurs ne proposent pas d'API pour ça à ce jour."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quel niveau de Python faut-il pour faire du machine learning ou du deep learning ? Je parle du Python pur (strings, listes, dictionnaires, POO…), pas des librairies."
+    },
+    {
+      "role": "assistant",
+      "content": "Si tu maîtrises ces bases (types numériques, chaînes, ensembles, listes, dictionnaires, programmation orientée objet), c'est déjà parfait : le machine learning n'en demande pas plus. Plus tard, pour des choses comme les modèles de diffusion, un niveau intermédiaire en Python aide énormément."
+    },
+    {
+      "role": "user",
+      "content": "Donc si je comprends bien les structures de données et la POO, je peux me lancer ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Oui, totalement : les bases du langage suffisent largement pour démarrer. Et au-delà de la syntaxe, le plus important est de comprendre les bases de la programmation et surtout l'architecture logicielle, qui est vraiment centrale à l'ère de l'IA."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Julia ou Mojo pourraient-ils remplacer Python pour l'IA ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Julia a une syntaxe proche de Python, est facile à apprendre et optimisé pour le calcul scientifique, le ML et le DL (sa première version date de 2012). Mais il est difficile de voir l'industrie quitter Python : de gros écosystèmes comme Jax y sont déjà ancrés. À moins d'un retour massif vers le C++, Python devrait rester la base du domaine pendant des décennies.\n\nMojo est un autre langage performant, surtout pour le scaling en IA, dont la version 1.0 est sortie récemment. Il est plus difficile à installer (sous Windows, il faut passer par WSL2) et on en voit mieux l'intérêt avec un GPU : sur une vieille machine sans GPU, il sera difficile de mesurer sa puissance."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment acheter des crédits d'API OpenAI quand on n'a pas de carte bancaire internationale ? Quel est le montant minimum ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Pour l'API d'OpenAI, il faut en principe une carte de débit d'une banque. Une alternative est de passer par des revendeurs de clés API tiers, qui acceptent le mobile money. Tu peux aussi essayer une carte Mastercard d'Orange. Côté montant, l'ordre de grandeur évoqué est d'environ 5 à 10 $ pour commencer. Vérifie les conditions actuelles directement sur la plateforme."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Pour construire des agents, faut-il utiliser du multi-agent, des MCP, des skills, des hooks ? Ou une simple boucle suffit ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Pour la plupart des problèmes, une simple boucle agentique suffit. Les modèles récents ont internalisé deux composantes qui leur manquaient : l'évaluateur et la réflexion. En 2023-2024, il fallait les contourner avec des hooks, mais ils peuvent maintenant jouer ces rôles eux-mêmes. Avec un outil de recherche web, ils retrouvent les infos et restent cohérents dans leur trajectoire.\n\n- Multi-agent : à éviter en général. C'est overkill et ça ramène les problèmes classiques de la concurrence (deadlocks, race conditions). Un swarm de milliers d'agents se justifie pour un très gros problème de recherche (une forme de brute force guidée), pas pour des tâches courantes.\n- MCP : à supprimer si tu n'en as pas besoin, mais pas à bannir : garde-le pour un cas précis. Beaucoup de services ont déjà des API plus complètes, et l'agent est très bon en bash (« bash is all you need » sous Unix). Un exemple de setup minimal : deux MCP seulement (un moteur de recherche et un outil de documentation), sans skills, hooks ni sous-agents.\n- Contrôle : un LLM seul ne suffit pas, les outils comme Claude Code ou Codex sont des systèmes autour d'un LLM. L'approche qui semble fonctionner est de combiner un générateur de code et des vérificateurs."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Faut-il relire le code généré par un agent comme Claude, ou lui faire confiance et se concentrer sur le plan ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Deux positions existent. D'un côté, on peut voir un décalage d'abstraction : comme on ne relit pas le bytecode produit par un compilateur, on passera plus de temps à écrire des plans puis à cliquer sur « Run », et on peut même demander à l'agent de relire son code.\n\nDe l'autre, rester dans la boucle reste utile : un modèle peut produire du code qui marche mais très mal structuré (par exemple des fichiers de 3000 à 5000 lignes que personne ne peut maintenir). Lire, guider, et voir l'agent comme une extension de tes bras plutôt que de ton cerveau évite ça. Ça marche d'autant mieux quand la base de code a déjà une structure prévisible, car le modèle ne divague pas. De plus, un modèle ne suit pas toujours tes instructions et peut mentir, donc il vaut mieux ne pas lui faire une confiance aveugle."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Claude me donne souvent raison trop vite. Comment obtenir des réponses plus honnêtes ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Les modèles ont tendance à être complaisants avec l'utilisateur. Une bonne pratique est de ne jamais accepter une réponse ou une suggestion du premier coup :\n- relance avec « en es-tu sûr ? » ou « réponds sincèrement » ;\n- propose l'inverse de sa suggestion pour voir ce qu'il répond ;\n- puis compare le poids des arguments des deux côtés avant de décider.\n\nC'est un vrai travail de détective, mais ça donne des réponses plus fiables."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quel modèle est utilisé pour la reconnaissance vocale en wolof ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Un modèle XLS-R fine-tuné sur un jeu de données wolof propre à l'équipe. Pour les cas où l'on voudrait entraîner son propre modèle de reconnaissance vocale, un Whisper fine-tuné puis quantisé avec CTranslate2 est aussi une option de déploiement sur CPU ou GPU."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Comment faire pour que Claude respecte mon style de code ? Faut-il indexer mes dépôts dans une base vectorielle ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Une approche plus simple est de lui demander de lire un de tes dépôts from scratch et de l'ajouter à son contexte de session. Après quelques reviews, il capte bien ton style, surtout si la base de code existante a déjà une structure claire. Une base vectorielle (pour qu'il y cherche, lise et comprenne tes dépôts, voire d'autres) est une idée possible mais plus lourde. Attention : Context7 sert à fournir de la documentation de bibliothèques, pas à apprendre ton propre code."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "Quelle différence entre Playwright MCP et Claude in Chrome pour automatiser un navigateur avec Claude Code ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Playwright est un outil d'automatisation de tests (comme Selenium), disponible via un MCP. Claude in Chrome expose le navigateur Chrome à Claude, et il offre les mêmes pouvoirs que Playwright, par exemple les captures d'écran. Côté usage, Playwright est très pratique pour automatiser des tests fonctionnels (par exemple sur Odoo). Le ToolSearch natif de Claude Code est normalement actif par défaut, ce qui limite les problèmes de contexte dus aux outils MCP."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "C'est quoi le « loop engineering » avec les agents ?"
+    },
+    {
+      "role": "assistant",
+      "content": "C'est laisser l'agent travailler de manière plus autonome en automatisant des tâches ; certains le combinent avec un objectif (un « goal ») pour créer un système où l'humain ne fait plus partie de la boucle mais en devient le concepteur. Cela demande souvent un agent très solide en computer use. Cette approche est discutée : sortir l'humain de la boucle peut créer plus de problèmes qu'elle n'en résout, car ce que l'agent fait sans consulter l'utilisateur, il le fait potentiellement contre lui."
+    }
+  ]
+]

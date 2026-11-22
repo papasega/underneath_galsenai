@@ -1,0 +1,37 @@
+14/03/2026, 08:02 - Awa Diop: Salut tout le monde! Qui a suivi le live de GalSenAI hier sur les LLM en wolof?
+14/03/2026, 08:05 - Modou Fall: Moi oui, c'était très instructif. Ils ont montré comment adapter un petit modèle pour traduire du français vers le wolof.
+14/03/2026, 08:07 - Awa Diop: Exactement, et la partie sur la qualité des données m'a marqué. Sans corpus propre, même le meilleur modèle ne comprend pas le wolof.
+14/03/2026, 08:09 - Ibrahima Ndiaye: Le vrai problème c'est qu'on a très peu de texte écrit en wolof sur internet. Les gens écrivent surtout en franglais ou en SMS.
+14/03/2026, 08:11 - Fatou Sow: C'est pour ça que les conversations WhatsApp en langues locales sont précieuses. Mais il faut anonymiser avant de les utiliser.
+14/03/2026, 08:13 - Modou Fall: Oui, on doit retirer les numéros, les noms et les adresses. Sinon on expose les gens.
+14/03/2026, 08:15 - Cheikh Mbaye: Et le consentement? Quand quelqu'un écrit dans un groupe, il ne pense pas forcément à ce que son texte servira à entraîner un modèle.
+14/03/2026, 08:17 - Awa Diop: Bon point. La Commission de protection des données personnelles (CDP) encadre ce genre de traitement, il faut se renseigner avant de publier un dataset.
+14/03/2026, 08:18 - Fatou Sow: Je regarde les textes et on en reparle la semaine prochaine.
+14/03/2026, 08:20 - Ibrahima Ndiaye: Question: est-ce qu'on a déjà un benchmark pour évaluer un LLM en wolof?
+14/03/2026, 08:24 - Cheikh Mbaye: Pas à ma connaissance de standard, on a surtout des petits jeux de tests faits maison. C'est un gros chantier pour la communauté.
+14/03/2026, 08:26 - Mariama Ba: Je propose qu'on commence par un petit corpus de questions-réponses validé par des locuteurs natifs. Ça pourrait servir de base.
+14/03/2026, 08:28 - Modou Fall: Bonne idée. Il faut des locuteurs de plusieurs régions, le wolof de Dakar et celui de Saint-Louis ne sont pas identiques.
+14/03/2026, 08:30 - Awa Diop: Et les autres langues nationales? Pulaar, sereer, diola... On ne doit pas tout ramener au wolof.
+14/03/2026, 08:31 - Mariama Ba: Totalement d'accord, la diversité linguistique est une vraie richesse pour le pays.
+14/03/2026, 08:35 - Ibrahima Ndiaye: Sur le terrain, qu'est-ce qui marche déjà en IA au Sénégal?
+14/03/2026, 08:37 - Fatou Sow: Dans l'agriculture, il y a des applications qui aident les producteurs d'oignon à savoir quand arroser ou quand traiter contre les maladies.
+14/03/2026, 08:39 - Cheikh Mbaye: En santé aussi, la détection de certaines anomalies sur des radiographies progresse bien, mais un médecin doit valider.
+14/03/2026, 08:41 - Mariama Ba: Et les chatbots du service client. Beaucoup d'entreprises répondent aux questions de base en français et en wolof avec.
+14/03/2026, 08:43 - Modou Fall: Le problème c'est la connexion. Un modèle dans le cloud ne sert à rien si la 4G coupe toutes les dix minutes.
+14/03/2026, 08:44 - Awa Diop: D'où l'intérêt des petits modèles qui tournent sur un téléphone ou un ordinateur sans internet. C'est ce qu'on a vu dans le live.
+14/03/2026, 08:46 - Ibrahima Ndiaye: Et l'électricité? Les data centers consomment beaucoup, et on n'a pas forcément l'infrastructure.
+14/03/2026, 08:48 - Cheikh Mbaye: C'est vrai, mais on peut commencer petit. Un modèle de quelques dizaines de millions de paramètres s'entraîne sur une seule carte graphique.
+14/03/2026, 08:50 - Fatou Sow: C'est justement ce qu'on fait dans le cours sur le Transformer: on construit un modèle de zéro, couche par couche.
+14/03/2026, 08:52 - Mariama Ba: Pour les étudiants c'est une super opportunité. Beaucoup veulent comprendre l'IA mais ne savent pas par où commencer.
+14/03/2026, 08:54 - Modou Fall: Il faut aussi parler des risques. Les arnaques par messages vocaux imitant un proche existent déjà sur WhatsApp.
+14/03/2026, 08:56 - Awa Diop: Oui, des faux vocaux de parents qui demandent de l'argent en urgence. L'éducation au numérique est indispensable.
+14/03/2026, 08:58 - Ibrahima Ndiaye: Et l'emploi? L'IA va remplacer les développeurs ou les traducteurs?
+14/03/2026, 09:01 - Cheikh Mbaye: Je pense qu'elle va transformer les métiers plus qu'elle ne les supprime. Celui qui sait utiliser l'outil aura un avantage.
+14/03/2026, 09:03 - Fatou Sow: Les traducteurs de wolof vont être très demandés pour vérifier et corriger les sorties des modèles, non?
+14/03/2026, 09:04 - Mariama Ba: Exactement, la validation humaine restera indispensable, surtout pour les langues peu documentées.
+14/03/2026, 09:06 - Modou Fall: Proposition: atelier mardi prochain, collecte de questions-réponses en wolof et lecture du cours sur l'attention.
+14/03/2026, 09:08 - Awa Diop: Ok pour moi. Je m'occupe de la fiche d'inscription et du lien de la salle.
+14/03/2026, 09:09 - Ibrahima Ndiaye: Je prépare un petit script pour nettoyer les exports WhatsApp et enlever les infos personnelles.
+14/03/2026, 09:11 - Cheikh Mbaye: Parfait. N'oubliez pas de partager les ressources dans le groupe avant l'atelier.
+14/03/2026, 09:12 - Mariama Ba: Je les mets dans la section ressources du groupe ce soir.
+14/03/2026, 09:14 - Fatou Sow: Merci à tous, bonne journée! 🇸🇳

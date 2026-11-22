@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install (CPU torch)
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[dev]"
+      - run: uv run --no-sync ruff check src tests data/prepare_data_galesnai.py
+      - run: uv run --no-sync ruff format --check src tests data/prepare_data_galesnai.py
+      - run: uv run --no-sync mypy
+      - run: uv run --no-sync pytest -q
