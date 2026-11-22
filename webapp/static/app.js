@@ -1,10 +1,10 @@
 const log = document.getElementById("log"), form = document.getElementById("form");
 const input = document.getElementById("input"), send = document.getElementById("send");
 const picker = document.getElementById("model"), detail = document.getElementById("detail");
-let history = [], system = "", busy = false, models = [];
+let history = [], busy = false, models = [];
 
 fetch("/api/config").then(r => r.json()).then(c => {
-  system = c.system || ""; models = c.models;
+  models = c.models;
   models.forEach(m => picker.add(new Option(m.name + (m.available ? "" : " (indisponible)"), m.id)));
   picker.value = c.default; showDetail();
 });
@@ -84,7 +84,7 @@ async function ask(text) {
   history.push({ role: "user", content: text });
   addMsg("user", text);
   const bubble = addMsg("assistant", ""); bubble.classList.add("typing");
-  const messages = (system ? [{ role: "system", content: system }] : []).concat(history);
+  const messages = history;  // the system prompt (Gemma only) is added by the server
   let answer = "";
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages, model: picker.value }) });

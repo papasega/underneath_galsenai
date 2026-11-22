@@ -6,7 +6,7 @@
     VLLM_BASE_URL=http://localhost:8000/v1 .venv/bin/python webapp/server.py [--port 8080]
 
 Env: VLLM_BASE_URL, MODEL (upstream model name, default: first one listed), ACTIVE_MODEL (name shown in the UI),
-SYSTEM_PROMPT, API_KEY (Bearer), NANOCHAT_CHECKPOINT, NANOCHAT_TOKENIZER.
+SYSTEM_PROMPT (Gemma system message, default: GalsenAI assistant; "" to disable), API_KEY (Bearer), NANOCHAT_CHECKPOINT, NANOCHAT_TOKENIZER.
 """
 
 import argparse
@@ -22,7 +22,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = Path(__file__).parent / "static"
 BASE = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1").rstrip("/")
-SYSTEM = os.environ.get("SYSTEM_PROMPT", "")
+DEFAULT_SYSTEM = (
+    "Tu es l'assistant de la communauté GalsenAI. Tu réponds en français, de façon claire et concise, aux questions "
+    "liées aux thématiques du groupe de discussion : modèles de langage (LLM), agents et outils, entraînement et "
+    "fine-tuning, NLP et langues locales (wolof), Python et développement, maths et recherche, infrastructure et GPU, "
+    "carrière et études en IA, événements et communauté au Sénégal. Appuie-toi sur ce qui a été discuté dans le "
+    "groupe ; si tu n'es pas sûr ou si l'information peut être périmée, dis-le au lieu d'inventer."
+)
+SYSTEM = os.environ.get("SYSTEM_PROMPT", DEFAULT_SYSTEM)  # SYSTEM_PROMPT="" disables it; applied to Gemma only
 NANO_CKPT = Path(os.environ.get("NANOCHAT_CHECKPOINT", ROOT / "data/private/checkpoints/galsenai_sft.pt"))
 NANO_TOK = Path(os.environ.get("NANOCHAT_TOKENIZER", ROOT / "data/private/galsenai_tok/galsenai.model"))
 TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml"}
@@ -115,7 +122,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/config":
             models = [gemma_info(), nanochat_info()]
             default = next((m["id"] for m in models if m["available"]), "gemma")
-            return self._send(200, json.dumps({"models": models, "default": default, "system": SYSTEM}).encode())
+            return self._send(200, json.dumps({"models": models, "default": default}).encode())
         rel = "index.html" if self.path in ("/", "") else self.path.lstrip("/").split("?")[0]
         f = (STATIC / rel).resolve()
         if STATIC.resolve() not in f.parents or not f.is_file():
@@ -169,6 +176,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _gemma(self, messages: list[dict], max_tokens: int, temperature: float) -> None:
         try:
+            if SYSTEM and messages[0].get("role") != "system":
+                messages = [{"role": "system", "content": SYSTEM}, *messages]
             body = {"model": upstream_model(), "messages": messages, "stream": True,
                     "max_tokens": max_tokens, "temperature": temperature}
             with upstream("/chat/completions", body) as r:
