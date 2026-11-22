@@ -205,3 +205,13 @@ checkpoints/
 AtlaSetCombined.txt
 # Local-only notes
 RESOURCES.md
+
+# Report: only the compiled PDF is versioned; the LaTeX sources stay local
+report/*.tex
+report/.latexmkrc
+report/assets/
+report/*.aux
+report/*.log
+report/*.xdv
+report/*.fls
+report/*.fdb_latexmk

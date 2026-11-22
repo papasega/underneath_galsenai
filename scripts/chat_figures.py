@@ -125,12 +125,16 @@ import numpy as np  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
 from wordcloud import WordCloud  # noqa: E402
 
-path = next(l for l in (ROOT / "report/senegal.tex").read_text().splitlines() if "\\fill[DeepGreen]" in l)
-pts = [(float(a), float(b)) for a, b in re.findall(r"\(([\d.]+),([\d.]+)\)", path)]
-S = 110  # pixels per map unit
-w, h = int(max(p[0] for p in pts) * S) + 20, int(max(p[1] for p in pts) * S) + 20
-mask = Image.new("L", (w, h), 255)
-ImageDraw.Draw(mask).polygon([(10 + x * S, h - 10 - y * S) for x, y in pts], fill=0)
+geo = json.loads((ROOT / "assets/senegal_adm1.geojson").read_text())
+rings = [poly[0] for f in geo["features"] for poly in (f["geometry"]["coordinates"] if f["geometry"]["type"] == "MultiPolygon" else [f["geometry"]["coordinates"]])]
+cos14, S = math.cos(math.radians(14)), 75  # pixels per degree
+lons = [x for r in rings for x, _ in r]
+lats = [y for r in rings for _, y in r]
+w, h = int((max(lons) - min(lons)) * cos14 * S) + 20, int((max(lats) - min(lats)) * S) + 20
+mask = Image.new("L", (w, h), 255)  # 255 = keep free; the country (Gambia gap excluded) is 0
+draw = ImageDraw.Draw(mask)
+for r in rings:
+    draw.polygon([(10 + (x - min(lons)) * cos14 * S, h - 10 - (y - min(lats)) * S) for x, y in r], fill=0)
 freq = {k: v for k, v in all_words.items() if k not in PLACEHOLDERS and len(k) >= 3}
 greens = ["#1e7a32", "#31ad48", "#14521f", "#50b963", "#001818"]
 cloud = WordCloud(width=w, height=h, mask=np.array(mask), background_color="white", max_words=170, contour_width=4,

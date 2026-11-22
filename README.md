@@ -187,6 +187,26 @@ git-ignored) for names you spot.
 `python3 scripts/whatsapp_stats.py` writes `data/whatsapp_questions_reponses/stats_discussion.md` from the raw export (profile
 names included, git-ignored): anonymize before sharing it.
 
+## Report
+
+`report/rapport_galsenai_underneath.pdf` is the only report file in the repository (3 pages, French: cover with a map of
+Senegal and the GalsenAI logo, what was built, results, discussion statistics). Its LaTeX sources are **kept local and
+git-ignored**:
+
+| File (in `report/`) | Role |
+|---|---|
+| `main.tex` | Title macros and document skeleton |
+| `style.tex` | GalsenAI palette (ink, greens), fonts, header/footer, cover page |
+| `corps.tex` | Page 2: objective, data, privacy, what was built, results table, takeaways |
+| `corps_stats.tex` | Page 3: theme and monthly charts, top voices, word cloud |
+| `senegal.tex` | TikZ map of the 14 regions, **generated** by `scripts/make_senegal_map.py` |
+| `stats_data.tex` | pgfplots data, **generated** by `scripts/chat_figures.py` |
+| `assets/` | Logo (vector PDF converted from `assets/galsenai-blanc-sans-signature.svg`) and the word cloud |
+| `.latexmkrc` | XeLaTeX build settings |
+
+Rebuild: `python3 scripts/make_senegal_map.py`, `uv run --no-project --with wordcloud python scripts/chat_figures.py`,
+then `cd report && latexmk -xelatex main.tex`.
+
 ## Tests
 
 `tests/` checks properties, not implementation: causality, KV-cache equals full forward (including the nanochat
