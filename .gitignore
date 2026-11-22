@@ -225,3 +225,4 @@ results/*merge*
 results/*sweep*
 
 scripts/local_sweep_commands.sh
+graphify-out/
