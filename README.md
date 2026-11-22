@@ -1,77 +1,177 @@
-# galsenai
+# GalsenAI Underneath : WhatsApp Discussions Questions/Réponses
 
-A small, readable decoder-only transformer (RMSNorm, RoPE, grouped-query attention, SwiGLU, KV cache,
-optional sliding-window layers, LoRA) meant to be trained from scratch and run on device.
+Turn the GalsenAI "Questions/Réponses" WhatsApp discussion into a small French chat assistant, and compare two ways
+of getting there on one laptop (Apple M5 Pro, 24 GB):
 
-Status: the training-side library is tested; on-device export is **not implemented yet** (see Roadmap).
+1. **Fine-tune Gemma 4 E2B** with LoRA (MLX).
+2. **Train `galsenai`**, a compact nanochat-style decoder-only transformer (12M parameters) from scratch, in this repo.
+
+Both are trained on the same 68 conversations and scored on the same 8 held-out ones.
+
+## Pipeline
+
+```
+WhatsApp export ──► prepare_data_galesnai.py (system lines out, phone numbers → keyed hash)
+                └─► anonymize_chat.py (random sender labels, names/links/numbers removed, dates → month)
+conversations (data/private/supervised_fine_tuning_galsenai.json, 76 Q&A conversations)
+   └─► prepare_sft_mlx.py ──► train.jsonl (68) / valid.jsonl (8)
+         ├─► train_lora.sh        Gemma 4 E2B + LoRA            (config_gemma.yml)
+         └─► train_tokenizer.py → galsenai.train base → sft     (config_nanochat.yml)
+                                  └─► run_eval.sh ──► results/eval_compare.md
+                                  └─► webapp/  chat UI on any OpenAI-compatible server (vLLM, mlx_lm.server)
+```
+
+Data format: a list of conversations, each a list of `{"role": "user" | "assistant", "content": ...}` turns.
 
 ## Install
 
 ```bash
-pip install -e ".[dev]"
+uv sync --extra dev          # or: pip install -e ".[dev]"
 pytest -q && ruff check . && mypy
 ```
 
-## Use
+Gemma fine-tuning and evaluation need [`mlx-lm`](https://github.com/ml-explore/mlx-lm), installed separately
+(it is not a project dependency): `uv tool install mlx-lm`.
+
+## Fine-tune Gemma 4 E2B (LoRA)
+
+All hyper-parameters, including the number of **epochs**, are in `config_gemma.yml`; `train_lora.sh` turns `epochs`
+into `--iters` (mlx-lm only knows iterations) and evaluates and saves once per epoch.
+
+```bash
+python3 scripts/prepare_sft_mlx.py      # fixed split: 68 train / 8 valid
+./scripts/train_lora.sh                 # reads config_gemma.yml; extra flags override, e.g. --learning-rate 5e-5
+```
+
+Settings that fit 24 GB: LoRA rank 8 on the top 16 layers, batch 2, gradient checkpointing (needed: without it rank 64
+with batch 8 runs out of Metal memory). Rank 32 on all layers at learning rate 1e-4 **diverged** (validation loss
+3.7 → 6.6), so it is not the default. Validation loss is lowest after **epoch 1** and rises afterwards (overfitting on
+68 conversations), so 1–2 epochs is the safer choice than the 5 in the file.
+
+## The `galsenai` model (nanochat style)
+
+A small decoder-only transformer: RMSNorm, RoPE, grouped-query attention, SwiGLU, KV cache, optional sliding-window
+layers, LoRA. `ModelConfig.nanochat(vocab_size, ...)` switches on the parts of
+[nanochat](https://github.com/karpathy/nanochat)'s GPT: relu² MLP, QK-norm, parameter-free RMSNorm, untied embeddings,
+logit soft-cap 15, RoPE base 1e5, SSSL sliding windows, per-layer residual/x0 lambdas. Not ported: value embeddings,
+smear gate, FP8, flash-attention, the Muon optimizer (AdamW is used). The chat format is nanochat's (`<|bos|>`,
+`<|user_start|>`, `<|assistant_start|>`, ...; loss on assistant tokens only).
+
+```bash
+python3 scripts/anonymize_chat.py CHAT.txt data/private/chat_anonymized.txt   # corpus for tokenizer and base stage
+python3 scripts/train_tokenizer.py                                            # BPE 2048 + 5 chat specials
+python -m galsenai.train --stage base                                         # next-token on chat text
+python -m galsenai.train --stage sft                                          # assistant tokens only
+python -m galsenai.chat --checkpoint data/private/checkpoints/galsenai_sft.pt \
+                        --tokenizer data/private/galsenai_tok/galsenai.model
+```
+
+Config and epochs: `config_nanochat.yml` (override with `--set sft.epochs=3`). Pre-training on the raw chat gives the
+model its vocabulary but also lets it see the source of the validation answers (see the evaluation caveats).
 
 ```python
 import torch
 from galsenai import GPT, ModelConfig, generate
 
-model = GPT(ModelConfig(vocab_size=16_394, n_layer=8, n_head=8, n_kv_head=2, n_embd=512))
-print(f"{model.num_params() / 1e6:.1f}M parameters")  # 30.9M with this config
-
-prompt = torch.tensor([[1, 2, 3]])
-tokens = generate(model, prompt, max_new_tokens=20, temperature=0.8, top_k=50)
+model = GPT(ModelConfig.nanochat(vocab_size=2053, n_layer=6, n_head=6, n_embd=384))
+tokens = generate(model, torch.tensor([[1, 2, 3]]), max_new_tokens=20, temperature=0.8, top_k=50)
 ```
-
-Chat with a trained checkpoint and a minbpe tokenizer:
-
-```bash
-python -m galsenai.chat --checkpoint run.pth --tokenizer tokenizer.model
-```
-
-## Design
 
 | Choice | Why |
 |---|---|
 | RoPE, no learned positions | Relative positions; no table tied to the training length |
-| Grouped-query attention (`n_kv_head`) | KV cache shrinks by `n_head / n_kv_head`, the main memory cost on a phone |
+| Grouped-query attention (`n_kv_head`) | KV cache shrinks by `n_head / n_kv_head` (the nanochat preset uses full MHA) |
 | Sliding-window layers (`sliding_window`, `global_every`) | Bounded attention cost, interleaved with global layers as in Gemma 3 |
-| RMSNorm, SwiGLU, tied embeddings, no biases | Fewer parameters and ops per layer |
-| KV-cache decoding | One new token costs O(1) projections, not a full forward pass |
+| No biases, KV-cache decoding | Fewer parameters; one new token costs O(1) projections |
 
-The structure (one config, fused QKV, `scaled_dot_product_attention`) follows
-[nanoGPT](https://github.com/karpathy/nanoGPT), which is deprecated upstream in favour of nanochat and ships
-GPT-2 components (LayerNorm, learned positions, GELU, full multi-head attention). This package keeps its
-compactness but uses the components on-device models rely on.
+The structure follows [nanoGPT](https://github.com/karpathy/nanoGPT) (deprecated upstream in favour of nanochat).
 
-## nanochat-style variant, SFT and evaluation
+## Evaluation
 
-`ModelConfig.nanochat(vocab_size, ...)` switches on the parts of [nanochat](https://github.com/karpathy/nanochat)'s GPT:
-relu² MLP, QK-norm, parameter-free RMSNorm, untied embeddings, logit soft-cap 15, RoPE base 1e5, SSSL sliding windows,
-per-layer residual/x0 lambdas. Not ported: value embeddings, smear gate, FP8, flash-attention, the Muon optimizer (AdamW is used).
-The chat format is nanochat's (`<|bos|>`, `<|user_start|>`, `<|assistant_start|>`...; loss on assistant tokens only).
+`./scripts/run_eval.sh` scores every model on the same 10 held-out assistant turns (gold history, greedy decoding) and
+writes `results/eval_compare.md`: bits per byte (tokenizer-independent), perplexity per token, ROUGE-L, token F1,
+distinct-2 and length ratio.
 
+| Model | Params | BPB ↓ | PPL/token ↓ | ROUGE-L ↑ | Token F1 ↑ | Distinct-2 ↑ | Len ratio | Empty |
+|---|---|---|---|---|---|---|---|---|
+| Gemma 4 E2B, no fine-tuning | 4629M | 1.130 | 30.6 | 0.082 | 0.144 | 0.86 | 8.37 | 0% |
+| Gemma 4 E2B + LoRA, 5 epochs | 4629M | 1.378 | 65.0 | 0.150 | 0.244 | 0.98 | 0.80 | 0% |
+| Gemma 4 E2B + LoRA, epoch 1 | 4629M | **0.854** | **13.3** | **0.196** | **0.272** | 0.69 | 0.99 | 0% |
+| galsenai 12M, base + SFT | 12M | 1.825 | 65.5 | 0.149 | 0.191 | 0.76 | 0.47 | 0% |
+| galsenai 12M, SFT only | 12M | 2.279 | 185.1 | 0.124 | 0.152 | 0.82 | 0.38 | 0% |
+
+How to read it:
+- **BPB** (bits per byte of the reference answer) and **PPL/token** score the reference answer under the model. BPB is
+  comparable across tokenizers, PPL/token is not.
+- **ROUGE-L / Token F1** measure word overlap with the reference. Low absolute values are normal: the references are
+  paraphrases of chat opinions.
+- **Distinct-2** is the share of unique word bigrams (low means repetition loops). **Len ratio** is generated words
+  over reference words: base Gemma is 8x too long, `galsenai` is about half as long as the reference.
+- Gemma LoRA at 5 epochs is worse than the untuned model on BPB (1.38 vs 1.13): overfitting. Epoch 1 is the best row on
+  every quality metric.
+
+Caveats: 10 turns from 8 conversations, so only large gaps mean something. `galsenai` base + SFT saw the raw chat the
+validation answers come from (optimistic); "SFT only" is the leak-free row. Gemma answers with its thinking mode on
+(same template as training) and the thought block is stripped before scoring.
+
+## Chat web app
+
+`webapp/` is a minimal chat UI (GalsenAI logo and colours) that streams from any OpenAI-compatible server. vLLM needs
+a GPU machine; on the Mac use `mlx_lm.server`.
+
+```bash
+# GPU machine
+vllm serve google/gemma-4-E2B-it --port 8000
+VLLM_BASE_URL=http://HOST:8000/v1 python3 webapp/server.py
+# Mac, with the LoRA adapter
+mlx_lm.server --model mlx-community/gemma-4-E2B-it-qat-4bit --adapter-path data/private/adapters/gemma4_e2b_galsenai --port 8001
+VLLM_BASE_URL=http://localhost:8001/v1 python3 webapp/server.py        # then open http://127.0.0.1:8080
 ```
-python3 scripts/anonymize_chat.py CHAT.txt data/private/chat_anonymized.txt   # corpus for the tokenizer and base stage
-python3 scripts/train_tokenizer.py && python -m galsenai.train --stage base && python -m galsenai.train --stage sft  # config_nanochat.yml
-./scripts/train_lora.sh                                                       # Gemma 4 E2B LoRA, config_gemma.yml
-./scripts/run_eval.sh                                                         # writes results/eval_compare.md
-```
+
+Optional environment variables: `MODEL`, `SYSTEM_PROMPT`, `API_KEY`. Standard library only.
+
+## Statistics on the discussion
+
+`python3 scripts/whatsapp_stats.py` writes `data/whatsapp_questions_reponses/stats_discussion.md` (top senders, themes
+by keyword, activity over time). It quotes profile names as found in the export: anonymize before sharing.
 
 ## Tests
 
-`tests/` checks properties, not implementation: causality, KV-cache equals full forward (full, GQA, MQA, sliding
-window), the sliding-window receptive field, RoPE relative-position invariance, parameter count against a closed
-form, loss masking, memorization of a short sequence, sampling filters, checkpoint round trip, LoRA identity at
-initialization.
+`tests/` checks properties, not implementation: causality, KV-cache equals full forward (including the nanochat
+variant), sliding-window receptive field, RoPE relative-position invariance, parameter count, loss masking,
+memorization of a short sequence, sampling filters, checkpoint round trip, LoRA identity at initialization, the chat
+format and assistant-only mask, and the anonymizer.
 
 ## Data preparation and privacy
 
-`data/prepare_data_galesnai.py` removes WhatsApp system lines and replaces every phone number with a keyed short
-hash (`TEL_ab12cd34`). The key and the token-to-number table live in `data/private/` and never leave the machine.
-Raw exports, media and backups are git-ignored. Display names are **not** anonymized.
+- `data/prepare_data_galesnai.py` removes WhatsApp system lines and replaces every phone number with an HMAC-SHA256
+  token (`TEL_ab12cd34`) under a secret local key. The key and the token-to-number table live in `data/private/` and
+  never leave the machine. Display names are **not** anonymized by this step.
+- `scripts/anonymize_chat.py` is the step before sharing text. Two layers of protection exist and they are not the
+  same thing: pseudonymization (the `TEL_` tokens, reversible by whoever holds the key) and anonymization (this script,
+  where nothing is kept that links back to a person).
+
+  | In the text | Treatment |
+  |---|---|
+  | Sender (display name or `TEL_` token) | Random label `U01`, `U02`, ... drawn fresh each run; **the mapping is never written** |
+  | The same names or `TEL_` tokens quoted inside messages | Same label as the sender, so threads stay readable |
+  | Links, e-mails, `@mentions`, phone-like numbers | `[lien]`, `[email]`, `[mention]`, `[numero]` |
+  | Date and time | Year-month only |
+  | Other people's names in free text, extra identifying details | **Not detected**: pass them with `--redact-words` |
+
+  Dropping the mapping table makes re-identification harder but does not make the data anonymous: in a community of
+  about 100 members, an opinion, a job or a writing style can identify someone. Before sharing outside the group,
+  proofread a sample, remove very personal messages, and get the administrators' consent. Under GDPR, data that is
+  only pseudonymized is still personal data. This is not legal advice.
+
+  ```bash
+  python3 scripts/anonymize_chat.py data/whatsapp_questions_reponses/CHAT.txt data/private/chat_anonymized.txt
+  python3 scripts/anonymize_chat.py CHAT.txt OUT.txt --redact-words names.txt   # one word or name per line
+  ```
+
+  The anonymized file is also the corpus the `galsenai` tokenizer and base stage train on.
+- Raw exports, media, backups, trained adapters and checkpoints are git-ignored. Model outputs in `results/` quote the
+  chat: do not publish them from a public repository without review.
 
 ```bash
 python data/prepare_data_galesnai.py --dry-run   # count only
@@ -80,12 +180,12 @@ python data/prepare_data_galesnai.py             # backup, filter, pseudonymize
 
 ## Roadmap
 
-1. Train and evaluate a first checkpoint on the cleaned data (perplexity on a held-out split).
+1. Pick the Gemma epoch count on a larger validation set, and add more conversations (76 is small).
 2. Export: weight quantization (int8/int4), then LiteRT or GGUF, with an accuracy check against the PyTorch model.
 3. Measure on-device memory and tokens/second on a real phone.
 
 ## Attribution
 
-`minbpe/` is Andrej Karpathy's tokenizer (MIT, see `minbpe/LICENSE`). The course notebooks this project grew
-from come from Imad Saddik's "Train your language model" course; check its license before redistributing any
-course material.
+`minbpe/` is Andrej Karpathy's tokenizer (MIT, see `minbpe/LICENSE`). The model structure follows nanoGPT and nanochat
+(Karpathy, MIT). The course notebooks in `legacy/` come from Imad Saddik's "Train your language model" course; check
+its license before redistributing any course material.
