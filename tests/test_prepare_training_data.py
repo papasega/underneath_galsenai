@@ -5,7 +5,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
-from data.prepare_training_data import build, prepare
+from click.testing import CliRunner
+
+from data.prepare_training_data import build, main, prepare
 
 
 def example(identifier, group, lines, question):
@@ -14,6 +16,14 @@ def example(identifier, group, lines, question):
 
 
 class PreparationTests(TestCase):
+    def test_cli_rejects_missing_config(self):
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "snapshot"
+            result = CliRunner().invoke(main, ["--config", str(Path(directory) / "missing.json"),
+                                                "--output", str(output)])
+            self.assertNotEqual(result.exit_code, 0)
+            self.assertFalse(output.exists())
+
     def test_overlap_duplicates_and_missing_provenance(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

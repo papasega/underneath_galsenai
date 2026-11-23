@@ -1,12 +1,13 @@
-"""Build an immutable, source-grouped SFT pilot snapshot using only the standard library."""
+"""Build an immutable, source-grouped SFT pilot snapshot."""
 
-import argparse
 import hashlib
 import json
 import re
 import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
+
+import click
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -178,12 +179,17 @@ def build(config_path, output, root=ROOT):
     return manifest
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=ROOT / "data/training_data/collection.json")
-    parser.add_argument("--output", type=Path, default=ROOT / "data/training_data/pilot_v1")
-    args = parser.parse_args()
+@click.command(help=__doc__)
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path),
+              default=ROOT / "data/training_data/collection.json", show_default=True)
+@click.option("--output", type=click.Path(file_okay=False, path_type=Path),
+              default=ROOT / "data/training_data/pilot_v1", show_default=True)
+def main(config, output):
     try:
-        build(args.config, args.output)
+        build(config, output)
     except (ValueError, KeyError, OSError) as error:
-        parser.exit(1, f"Preparation stopped: {error}\n")
+        raise click.ClickException(f"Preparation stopped: {error}") from error
+
+
+if __name__ == "__main__":
+    main()

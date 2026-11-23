@@ -1,0 +1,102 @@
+{
+  "counts": {
+    "test": 318,
+    "train": 1026,
+    "valid": 256
+  },
+  "by_theme": {
+    "test": {
+      "agents": 20,
+      "ai_careers": 8,
+      "ai_senegal": 11,
+      "applied_rag": 13,
+      "community_participation": 55,
+      "corpus_data": 12,
+      "deployment": 11,
+      "education": 7,
+      "galsenai_general": 23,
+      "llm_fundamentals": 20,
+      "offline_mobile": 22,
+      "sft_training": 27,
+      "software_engineering": 17,
+      "vision_multimodal": 19,
+      "voice_asr_tts": 14,
+      "wolof_local_languages": 39
+    },
+    "train": {
+      "agents": 49,
+      "ai_careers": 66,
+      "ai_senegal": 65,
+      "applied_rag": 71,
+      "community_participation": 45,
+      "corpus_data": 58,
+      "deployment": 64,
+      "education": 93,
+      "galsenai_general": 57,
+      "llm_fundamentals": 63,
+      "offline_mobile": 78,
+      "sft_training": 54,
+      "software_engineering": 73,
+      "vision_multimodal": 71,
+      "voice_asr_tts": 63,
+      "wolof_local_languages": 56
+    },
+    "valid": {
+      "agents": 31,
+      "ai_careers": 26,
+      "ai_senegal": 24,
+      "applied_rag": 16,
+      "corpus_data": 30,
+      "deployment": 25,
+      "galsenai_general": 20,
+      "llm_fundamentals": 17,
+      "sft_training": 19,
+      "software_engineering": 10,
+      "vision_multimodal": 10,
+      "voice_asr_tts": 23,
+      "wolof_local_languages": 5
+    }
+  },
+  "by_type": {
+    "test": {
+      "chat_grounded": 90,
+      "complementary": 223,
+      "general_llm": 5
+    },
+    "train": {
+      "chat_grounded": 306,
+      "complementary": 694,
+      "general_llm": 26
+    },
+    "valid": {
+      "chat_grounded": 94,
+      "complementary": 153,
+      "general_llm": 9
+    }
+  },
+  "input_sha256": {
+    "data/private/gemine_generate/sft_100_agents_ia.json": "859947e3459f68e3eee6cc89dc007f157838480032e8a34436751939b90179b6",
+    "data/private/gemine_generate/sft_100_deploiement_infrastructure_optimisation.json": "b3a4c2141ef699aa115d536c3ca0800c4418de663489ea58308f60229ca36595",
+    "data/private/gemine_generate/sft_100_donnees_annotation_corpus.json": "1716b0469b46d578a1b5ec40eafc425694ce127437e3dc5b36b40fbcd18d0a77",
+    "data/private/gemine_generate/sft_100_education_pedagogie.json": "7818a739f2cfd26d02adb5f4e0e6afc5833c48573f112a37ff79faebd211cfc6",
+    "data/private/gemine_generate/sft_100_finetuning_sft_adaptation.json": "572554aaaa7b48d88c45077fd7b2dc9a9c37388712f63bef501c45e257526efe",
+    "data/private/gemine_generate/sft_100_formation_apprentissage_metiers_ia.json": "58e9de806a4638f4dd86690810ad936c6b4a1b9045b4150c391782a0b53377e3",
+    "data/private/gemine_generate/sft_100_galsenai_participation_communaute.json": "c9335ff9e172661fd67dd6b9d7c03ea0b1608609d38177ca356402c96b4a522e",
+    "data/private/gemine_generate/sft_100_ia_mobile_embarquee_hors_ligne.json": "56f12d28394b4c8a77a8a7783e2c70198eed57b60aa929bcad1694c2a65428ba",
+    "data/private/gemine_generate/sft_100_programmation_ingenierie_logicielle_ia.json": "cd974ba17aeb9cee36dbd74ffffd73edd533033ab41c8af150d2764cd498ced4",
+    "data/private/gemine_generate/sft_100_rag_recherche_documentaire.json": "8ac17fb2bfcc118e6d102715f6dd07e2de1eee87fd25fc208addb15bdd5fa505",
+    "data/private/gemine_generate/sft_100_vision_ordinateur_multimodalite.json": "33431d85e6bd705c367d858a1c5b3022799628c13756dcb45b3d1b56402d0f0e",
+    "data/private/gemine_generate/sft_100_voix_asr_tts_langues_peu_dotees.json": "906df64d9b02f99a8f8f224c13fd1a72b5560db2ee4848a348149c48ce730c70",
+    "data/private/gemine_generate/sft_100_wolof_langues_locales_melange.json": "54ea15425659528dac032fe407adeed61c39e21fc189701694ee44e43f1618b4",
+    "data/private/gemine_generate/sft_ia_senegal_100.json": "8242c3fc19dbdb5edfc7eca9eb172faa32cf941fbc29b73b20de6f919da57908",
+    "data/private/gemine_generate/sft_llm_general_100.json": "1ae511f5c4620e2c613f9fb104455de42c6d4f5558e4765f8059e822879ef70a",
+    "data/private/gemine_generate/supervised_fine_tuning_galsenai_complete_corrige.json": "078eda7c068526361f4f7689c0afae0eacadd23eed31b49158a5a7a80efde423"
+  },
+  "component_count": 284,
+  "source_lines_questions_components_disjoint": true,
+  "v1_test_overlap_with_v2_train": {
+    "source_overlap_conversations": 7,
+    "exact_question_overlap_conversations": 10
+  },
+  "snapshot_hashes_verified": true
+}
