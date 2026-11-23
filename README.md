@@ -1,5 +1,7 @@
 # GalsenAI Underneath
-### WhatsApp Discussions Questions/Réponses
+### Unlocking the knowledge hidden in conversations.
+### From conversations to collective intelligence.
+##### WhatsApp Discussions Questions/Réponses
 
 <p align="center">
   <img src="assets/wordcloud.png" alt="Word cloud of the anonymized chat, in the shape of Senegal" width="640">
