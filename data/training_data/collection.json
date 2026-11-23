@@ -1,0 +1,47 @@
+{
+  "seed": 20261123,
+  "collection_targets": {
+    "llm_fundamentals": 100,
+    "ai_senegal": 100,
+    "agents": 100,
+    "voice_asr_tts": 100,
+    "wolof_local_languages": 100,
+    "corpus_data": 100,
+    "deployment": 100,
+    "software_engineering": 100,
+    "applied_rag": 100,
+    "sft_training": 100,
+    "offline_mobile": 100,
+    "ai_careers": 100,
+    "education": 100,
+    "vision_multimodal": 100,
+    "evaluation_reliability": 100
+  },
+  "sources": [
+    {
+      "path": "data/private/gemine_generate/sft_llm_general.json",
+      "theme": "llm_fundamentals",
+      "source_document": "chat_anonymized.txt"
+    },
+    {
+      "path": "data/private/gemine_generate/sft_ia_senegal.json",
+      "theme": "ai_senegal",
+      "source_document": "chat_anonymized.txt"
+    },
+    {
+      "path": "data/private/gemine_generate/sft_100_agents_ia.json",
+      "theme": "agents",
+      "source_document": "chat_anonymized.txt"
+    },
+    {
+      "path": "data/private/gemine_generate/sft_100_voix_asr_tts_langues_peu_dotees.json",
+      "theme": "voice_asr_tts",
+      "source_document": "chat_anonymized.txt"
+    },
+    {
+      "path": "data/private/gemine_generate/supervised_fine_tuning_galsenai.json",
+      "theme": "legacy_unmapped",
+      "source_document": "chat_anonymized.txt"
+    }
+  ]
+}

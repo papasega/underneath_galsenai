@@ -226,3 +226,6 @@ results/*sweep*
 
 scripts/local_sweep_commands.sh
 graphify-out/
+
+# Derived conversation snapshots remain local; only methodology/config are versioned.
+data/training_data/*/
