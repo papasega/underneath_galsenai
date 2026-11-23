@@ -21,6 +21,9 @@ data/private/*
 !data/private/supervised_fine_tuning_galsenai.json
 data/*.zip
 
+scripts/convert_legacy_sft.py
+tests/test_convert_legacy_sft.py
+
 # Training outputs and model artifacts (checkpoints, tokenizers, on-device exports)
 output/
 *.pth

@@ -1,890 +1,2577 @@
 [
-  [
-    {
-      "role": "user",
-      "content": "À quoi servent vraiment les petits modèles open source qui tournent en local (type Gemma avec LiteRT-LM) ? Est-ce qu'ils peuvent remplacer un Claude Code ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Non, ils ne sont pas faits pour remplacer des modèles comme Sonnet ou Opus pour le développement. Leur cas d'usage est plus restreint : tourner sur des appareils à faible puissance de calcul (IoT, téléphone), optimisés pour le CPU. LiteRT-LM vise justement ça, et il existe aussi en C++.\n\nLes avantages du edge :\n1. Pas besoin d'internet, donc pas de latence réseau.\n2. Tes données restent sur ton appareil au lieu d'être envoyées dans un datacenter.\n\nÇa permet par exemple à un agriculteur en zone rurale de piloter des outils dans sa langue locale, même sans connexion. Côté pratique, un modèle comme gemma4:e4b tourne sur un simple CPU avec une latence correcte, et on peut même bricoler une petite boucle agentique à la Claude Code en local, avec quelques limites."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Open source ou closed source : vaut-il mieux faire tourner un modèle open source soi-même ou payer un abonnement ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Ça dépend du cas d'usage.\n\nPour avancer vite en tant que développeur, souvent mieux vaut payer un abonnement : acheter des GPU pour faire tourner un modèle open source qui met 2 minutes par réponse coûte plus cher à contourner que le prix d'un plan à 100 $. Du côté purement business, le closed source est plus simple. Les modèles closed ont aussi une avance importante, donc un modèle local risque d'être à la traîne face à ce que les gens peuvent obtenir ailleurs.\n\nL'open source reste très utile : il rend la technologie accessible à tous, il est précieux pour la recherche, et pour des usages locaux ou embarqués (confidentialité, hors-ligne). Le plus sain pour l'écosystème open est d'avoir sa propre direction plutôt que de se contenter de répliquer chaque nouveauté du closed."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment construire un agent disponible sur WhatsApp qui accepte les messages vocaux et exécute les opérations demandées ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Le flux classique est le suivant :\n1. Ton code détecte que le message reçu est un audio.\n2. Il l'envoie à un modèle de transcription (Whisper d'OpenAI, ou Google Speech-to-Text par exemple).\n3. Le texte transcrit est transmis à ton agent, qui exécute l'opération ou génère une réponse textuelle.\n4. Si tu veux répondre en vocal, tu convertis la réponse en audio avant de la renvoyer.\n\nPoints d'attention : les modèles d'Anthropic ne gèrent pas l'audio, donc il faut passer par un middleware de transcription. Les audios WhatsApp arrivent dans des formats comme .oga, .opus ou .ogg, il faudra donc gérer la conversion/compatibilité de format. Si tu utilises une plateforme comme Salesforce Agentforce, des actions natives gèrent déjà la transcription : il suffit d'adapter les extensions de fichiers WhatsApp, puis de rediriger le texte vers l'agent."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Entre l'abonnement Claude et Codex (GPT-5.5), lequel tient le plus longtemps avant d'atteindre la limite d'usage ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Codex GPT-5.5 est excellent en software engineering, probablement même meilleur que Claude Sonnet sur ce point, mais il s'épuise vite : en quelques minutes à quelques heures on peut atteindre la limite et devoir attendre une semaine. Côté Claude, les limites ont récemment été relevées, donc l'agent s'arrête beaucoup moins brusquement. Vérifie les conditions actuelles de l'abonnement, qui changent régulièrement. Dans un sondage informel, la grande majorité des gens conseillait de rester sur Claude."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Où trouver le livre « AI Engineering » quand on est à Dakar ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Il est peu probable de le trouver en librairie locale. Une alternative est de le commander via shopmeaway, qui passe par Amazon et se charge de la livraison. Il existe aussi une version française, moins chère. Et si tu es à l'UCAD, l'UGB, au Sine Saloum ou à l'UAM, la plateforme Scholarvox de ton université donne accès à des millions de livres en libre accès."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi exactement un skill pour un agent comme Claude Code ? Un simple prompt en markdown ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Non, ce n'est pas qu'un prompt. Dans la proposition d'Anthropic, un skill est un package de compétences : un dossier qui contient un fichier SKILL.md, et éventuellement des scripts, des ressources, des références, etc. Le SKILL.md joue le rôle de point d'entrée (un peu comme un README pour le LLM) et son en-tête YAML (frontmatter) permet à l'agent de charger dynamiquement ce dont il a besoin.\n\nL'analogie avec Python aide : un module peut tenir dans un seul fichier, mais quand il se complexifie on en fait un package. Ici, c'est le LLM qui « exécute » le skill, comme Python exécute un script. Un skill peut d'ailleurs ne contenir que le SKILL.md, ou ce fichier plus des scripts, selon la complexité de la tâche."
-    },
-    {
-      "role": "user",
-      "content": "Et pourquoi Anthropic a créé les skills ? Pourquoi pas simplement des commandes ou un README ?"
-    },
-    {
-      "role": "assistant",
-      "content": "À l'origine, c'était pour résoudre l'explosion de contexte causée par les MCP. Le frontmatter du SKILL.md permet un chargement progressif (progressive loading) : l'agent ne lit d'abord que les en-têtes, et charge le contenu complet seulement quand c'est utile, ce qui évite de saturer la fenêtre de contexte.\n\nAutres points :\n- Les scripts d'un skill font gagner des tokens, car l'agent les lance sans avoir à les lire.\n- Un skill généralise les commandes et les prompts, qui ont fini par être absorbés par les skills : il reste surtout agents et skills.\n- L'idée est proche de la mémoire procédurale.\n- Claude Code possède un outil skill() qui scanne le répertoire et charge les frontmatter ; c'est pour ça qu'il attend un fichier nommé SKILL.md. Avec un très grand contexte, tu pourrais obtenir un comportement proche en demandant à l'agent de lire un autre fichier via ses instructions, mais le nom SKILL.md est la convention attendue par l'outil."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi un metaskill, et à quoi ça sert ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un metaskill est un skill qui gère d'autres skills. Il expose des actions comme search_skill, pull_skill, install_skill et upload_skill. Avec ça, l'agent peut chercher dans une base (par exemple vectorielle) de skills, les télécharger, les installer, en créer d'autres et les publier, un peu comme les meta-MCP : on monte en abstraction.\n\nÇa répond aussi à des limites pratiques : si tu modifies un skill en cours de session, tu dois le recharger, ce qui peut casser le cache_control d'Anthropic, et il y aurait une limite d'environ 20 skills chargés. D'où l'intérêt d'un système de recherche/chargement/déchargement. Attention cependant : les bases de skills partagées manquent encore de rigueur, avec pas mal de risques de prompt injection. Et en pratique le LLM peut parfois ignorer un skill s'il estime en savoir plus ; certains mettent des règles marquées « ABSOLUTE RULE » dans leurs prompts et skills pour limiter ça."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelles sont les tailles de la famille Gemma 4, et lesquelles tournent en local sur mobile ?"
-    },
-    {
-      "role": "assistant",
-      "content": "La gamme complète : E2B, E4B, 12B, 26B A4B (MoE) et 31B Dense. Le 31B est le flagship dense et domine nettement sur les benchmarks, comme attendu.\n\nEn local : les E2B et E4B tournent hors-ligne sur mobile et IoT, notamment avec LiteRT-LM, et l'E4B a du répondant en usage agentique. Le 12B, lui, a été testé sur un Mac avec 24 Go de RAM et fonctionne parfaitement. Avec un bon fine-tuning, un E2B peut donner de bons résultats en local, par exemple pour des gadgets hors-ligne à usage éducatif."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Qu'est-ce que l'exploration et l'exploitation pour un agent LLM ? Est-ce qu'il explore vraiment plusieurs trajectoires avant de répondre ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une trajectoire est une suite (a1,o1), (a2,o2), …, (an,on) d'actions et d'observations. À chaque étape, l'agent attribue une probabilité (entre 0 et 1) à chaque action suivante. S'il choisit toujours la plus probable, il fait de l'exploitation ; s'il choisit parfois une action moins probable, il fait de l'exploration, ce qui permet parfois de trouver la solution plus vite.\n\nQuant à savoir s'il explore plusieurs trajectoires, il y a deux niveaux :\n1. Une exploration implicite : générer le tour n en s'appuyant sur les n-1 tours précédents revient déjà à chercher le meilleur tour n pour compléter la trajectoire. Elle vient de l'entraînement.\n2. Une exploration externe, dans une boucle extérieure : l'agent génère x tentatives puis choisit la meilleure. Elle est plus lente, mais explicite. L'article de Google sur le scaling du test-time compute en donne des exemples.\n\nLes modèles récents sont assez bons pour faire cela de façon presque implicite."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment comparer deux modèles sur un même problème ? Est-ce que moins de tokens consommés veut dire meilleur modèle ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Pas automatiquement. Si un modèle résout la même tâche avec moins de tokens sans perdre en qualité, il est meilleur sur ce critère. Mais la qualité se mesure aussi par la robustesse de la solution finale et la pertinence du contenu de la réponse. Pour un problème donné, on regarde généralement :\n- le nombre de tokens consommés,\n- la latence,\n- la qualité de la réponse (a-t-elle atteint l'objectif de l'utilisateur ?).\n\nC'est relatif : un modèle peut résoudre le problème avec 100k tokens et un autre avec 500k, la comparaison dépend de ce qui compte pour ton cas d'usage."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi le travail d'un AI Engineer au quotidien ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Ça ressemble beaucoup à de l'ingénierie logicielle avec une composante IA :\n- entraîner des modèles ;\n- optimiser les services d'inférence (avec des outils comme Triton Inference Server de NVIDIA, qui sert des modèles ML, ou ZeroMQ) ;\n- parfois implémenter des papiers de recherche.\n\nUn conseil : concentre-toi sur le fait d'être un bon ingénieur, tu pourras ensuite t'adapter facilement. Au final, c'est un computer scientist qui manipule des algorithmes au quotidien."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Je voudrais brancher un agent vocal sur le réseau téléphonique mobile avec de l'ASR. Quelles sont les difficultés techniques et comment déployer à grande échelle ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Les difficultés principales :\n1. Les modèles ASR sont entraînés sur de l'audio 16 kHz, alors que la téléphonie utilise un autre standard (G.711). Il faut donc adapter l'audio avec des algorithmes de downsampling, etc. Tant que tu n'as pas un modèle capable d'écouter le réseau mobile, impossible de brancher un LLM.\n2. Le LLM doit aussi comprendre un wolof bruité, mais c'est un autre problème.\n3. Le reste, c'est une bonne boucle agentique.\n\nCôté modèle, tu peux entraîner un Whisper puis le quantiser avec CTranslate2 pour le déployer sur plusieurs CPU ou GPU. À grande échelle, on peut monter progressivement jusqu'à une centaine de GPU H100 ; avec de la programmation parallèle, on fait tourner plusieurs modèles sur une même carte (jusqu'à environ 400 modèles ASR en parallèle), avec plusieurs workers qui se partagent le GPU et ZeroMQ en inproc pour le load balancing.\n\nOn est surtout face à un problème d'ingénierie : communiquer avec les systèmes mobiles est difficile, Twilio ne supporte pas les numéros sénégalais et les opérateurs ne proposent pas d'API pour ça à ce jour."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quel niveau de Python faut-il pour faire du machine learning ou du deep learning ? Je parle du Python pur (strings, listes, dictionnaires, POO…), pas des librairies."
-    },
-    {
-      "role": "assistant",
-      "content": "Si tu maîtrises ces bases (types numériques, chaînes, ensembles, listes, dictionnaires, programmation orientée objet), c'est déjà parfait : le machine learning n'en demande pas plus. Plus tard, pour des choses comme les modèles de diffusion, un niveau intermédiaire en Python aide énormément."
-    },
-    {
-      "role": "user",
-      "content": "Donc si je comprends bien les structures de données et la POO, je peux me lancer ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Oui, totalement : les bases du langage suffisent largement pour démarrer. Et au-delà de la syntaxe, le plus important est de comprendre les bases de la programmation et surtout l'architecture logicielle, qui est vraiment centrale à l'ère de l'IA."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Julia ou Mojo pourraient-ils remplacer Python pour l'IA ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Julia a une syntaxe proche de Python, est facile à apprendre et optimisé pour le calcul scientifique, le ML et le DL (sa première version date de 2012). Mais il est difficile de voir l'industrie quitter Python : de gros écosystèmes comme Jax y sont déjà ancrés. À moins d'un retour massif vers le C++, Python devrait rester la base du domaine pendant des décennies.\n\nMojo est un autre langage performant, surtout pour le scaling en IA, dont la version 1.0 est sortie récemment. Il est plus difficile à installer (sous Windows, il faut passer par WSL2) et on en voit mieux l'intérêt avec un GPU : sur une vieille machine sans GPU, il sera difficile de mesurer sa puissance."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment acheter des crédits d'API OpenAI quand on n'a pas de carte bancaire internationale ? Quel est le montant minimum ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Pour l'API d'OpenAI, il faut en principe une carte de débit d'une banque. Une alternative est de passer par des revendeurs de clés API tiers, qui acceptent le mobile money. Tu peux aussi essayer une carte Mastercard d'Orange. Côté montant, l'ordre de grandeur évoqué est d'environ 5 à 10 $ pour commencer. Vérifie les conditions actuelles directement sur la plateforme."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Pour construire des agents, faut-il utiliser du multi-agent, des MCP, des skills, des hooks ? Ou une simple boucle suffit ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Pour la plupart des problèmes, une simple boucle agentique suffit. Les modèles récents ont internalisé deux composantes qui leur manquaient : l'évaluateur et la réflexion. En 2023-2024, il fallait les contourner avec des hooks, mais ils peuvent maintenant jouer ces rôles eux-mêmes. Avec un outil de recherche web, ils retrouvent les infos et restent cohérents dans leur trajectoire.\n\n- Multi-agent : à éviter en général. C'est overkill et ça ramène les problèmes classiques de la concurrence (deadlocks, race conditions). Un swarm de milliers d'agents se justifie pour un très gros problème de recherche (une forme de brute force guidée), pas pour des tâches courantes.\n- MCP : à supprimer si tu n'en as pas besoin, mais pas à bannir : garde-le pour un cas précis. Beaucoup de services ont déjà des API plus complètes, et l'agent est très bon en bash (« bash is all you need » sous Unix). Un exemple de setup minimal : deux MCP seulement (un moteur de recherche et un outil de documentation), sans skills, hooks ni sous-agents.\n- Contrôle : un LLM seul ne suffit pas, les outils comme Claude Code ou Codex sont des systèmes autour d'un LLM. L'approche qui semble fonctionner est de combiner un générateur de code et des vérificateurs."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Faut-il relire le code généré par un agent comme Claude, ou lui faire confiance et se concentrer sur le plan ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Deux positions existent. D'un côté, on peut voir un décalage d'abstraction : comme on ne relit pas le bytecode produit par un compilateur, on passera plus de temps à écrire des plans puis à cliquer sur « Run », et on peut même demander à l'agent de relire son code.\n\nDe l'autre, rester dans la boucle reste utile : un modèle peut produire du code qui marche mais très mal structuré (par exemple des fichiers de 3000 à 5000 lignes que personne ne peut maintenir). Lire, guider, et voir l'agent comme une extension de tes bras plutôt que de ton cerveau évite ça. Ça marche d'autant mieux quand la base de code a déjà une structure prévisible, car le modèle ne divague pas. De plus, un modèle ne suit pas toujours tes instructions et peut mentir, donc il vaut mieux ne pas lui faire une confiance aveugle."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Claude me donne souvent raison trop vite. Comment obtenir des réponses plus honnêtes ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Les modèles ont tendance à être complaisants avec l'utilisateur. Une bonne pratique est de ne jamais accepter une réponse ou une suggestion du premier coup :\n- relance avec « en es-tu sûr ? » ou « réponds sincèrement » ;\n- propose l'inverse de sa suggestion pour voir ce qu'il répond ;\n- puis compare le poids des arguments des deux côtés avant de décider.\n\nC'est un vrai travail de détective, mais ça donne des réponses plus fiables."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quel modèle est utilisé pour la reconnaissance vocale en wolof ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un modèle XLS-R fine-tuné sur un jeu de données wolof propre à l'équipe. Pour les cas où l'on voudrait entraîner son propre modèle de reconnaissance vocale, un Whisper fine-tuné puis quantisé avec CTranslate2 est aussi une option de déploiement sur CPU ou GPU."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment faire pour que Claude respecte mon style de code ? Faut-il indexer mes dépôts dans une base vectorielle ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une approche plus simple est de lui demander de lire un de tes dépôts from scratch et de l'ajouter à son contexte de session. Après quelques reviews, il capte bien ton style, surtout si la base de code existante a déjà une structure claire. Une base vectorielle (pour qu'il y cherche, lise et comprenne tes dépôts, voire d'autres) est une idée possible mais plus lourde. Attention : Context7 sert à fournir de la documentation de bibliothèques, pas à apprendre ton propre code."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelle différence entre Playwright MCP et Claude in Chrome pour automatiser un navigateur avec Claude Code ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Playwright est un outil d'automatisation de tests (comme Selenium), disponible via un MCP. Claude in Chrome expose le navigateur Chrome à Claude, et il offre les mêmes pouvoirs que Playwright, par exemple les captures d'écran. Côté usage, Playwright est très pratique pour automatiser des tests fonctionnels (par exemple sur Odoo). Le ToolSearch natif de Claude Code est normalement actif par défaut, ce qui limite les problèmes de contexte dus aux outils MCP."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi le « loop engineering » avec les agents ?"
-    },
-    {
-      "role": "assistant",
-      "content": "C'est laisser l'agent travailler de manière plus autonome en automatisant des tâches ; certains le combinent avec un objectif (un « goal ») pour créer un système où l'humain ne fait plus partie de la boucle mais en devient le concepteur. Cela demande souvent un agent très solide en computer use. Cette approche est discutée : sortir l'humain de la boucle peut créer plus de problèmes qu'elle n'en résout, car ce que l'agent fait sans consulter l'utilisateur, il le fait potentiellement contre lui."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Que pensez-vous des modèles open-weight, par exemple le modèle GLM ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Ils rattrapent doucement leur retard sur les modèles frontière, et les résultats en développement front-end sont impressionnants. Leur intérêt principal : un déploiement on-premise sur de petits clusters (par exemple des machines NVIDIA DGX ou des Mac mini), qui peut compenser le manque de compute et réduire la dépendance aux modèles fermés."
-    },
-    {
-      "role": "user",
-      "content": "Quels autres aléas peut-on citer ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Il y en a trois. La dépendance : si les grands acteurs qui publient ces modèles changent de stratégie, cette source peut disparaître, même si le risque paraît faible vu la taille de l'écosystème open source. Les capacités : développer soi-même des modèles compétitifs demande de l'expertise, du compute, des données et des financements, que peu d'acteurs réunissent. L'infrastructure : les clusters consomment beaucoup d'électricité et d'eau pour le refroidissement, ce qu'il faut intégrer dès la planification."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Pourquoi garder les termes techniques en français au lieu de les traduire en wolof pur, alors que l'objectif est un enseignement en langues locales ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Le choix est volontaire. Si l'on traduit des termes comme molécule, intégrale ou équation différentielle, on perd une partie du public, et une traduction trop pure devient elle-même une barrière. Le wolof parlé dans la rue est un mélange de wolof, de français et de quelques mots peuls. Viser 100 % de langues locales n'a donc pas de sens pratique : mieux vaut un mélange qui reflète l'usage réel."
-    },
-    {
-      "role": "user",
-      "content": "Donc on vise un mélange plutôt que 100 % wolof ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Oui. On peut expliquer des notions simples en langue locale, par exemple dire 1+1=2 en wolof, ce qui peut surtout aider l'apprentissage des maths élémentaires, sans viser 100 %."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Tu sais de quoi ça parle concrètement, Navier-Stokes ? Explique-nous d'abord, s'il te plaît."
-    },
-    {
-      "role": "assistant",
-      "content": "C'est une équation qui décrit le mouvement des fluides, utilisée par exemple pour modéliser le climat ou l'écoulement d'un fleuve. Le problème ouvert porte sur les solutions mathématiques exactes : partant d'un état initial lisse, la solution reste-t-elle lisse pour tout temps, ou existe-t-il un instant fini où la vitesse, ou son gradient, devient infinie ? Ce n'est pas une erreur de simulation numérique, mais une question sur l'équation elle-même."
-    },
-    {
-      "role": "user",
-      "content": "Donc si elle explose, elle ne marche plus ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un vrai fluide n'atteint jamais une vitesse infinie : bien avant, l'hypothèse du milieu continu s'effondre et la physique moléculaire prend le relais. Un blow-up signifierait donc que l'équation cesse d'être un modèle valide au-delà d'un certain régime, sans être fausse là où on l'utilise. Un résultat annoncé récemment (à vérifier) concerne le cas avec force externe lisse ; le cas du fluide libre, sans force, reste une question distincte."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Si on trouve un algorithme polynomial pour un seul problème NP-complet, est-ce que P = NP est prouvé ?"
-    },
-    {
-      "role": "assistant",
-      "content": "C'est l'argument avancé dans la discussion : un algorithme polynomial pour un seul problème NP-complet, comme 3-SAT, suffirait à établir P = NP. Mais aucune preuve de ce type n'est connue à ce jour (à vérifier), et la difficulté vient de la nature même du problème. Il faut donc distinguer une piste prometteuse d'une démonstration complète."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment gérer un agent qui tourne en rond, bloqué dans un minimum local ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une piste proposée est de réécrire les instructions de l'agent, ou de répartir le travail entre plusieurs groupes d'agents. Un autre avis est qu'une simple boucle agentique suffit pour des problèmes simples, sans passer par un swarm d'agents."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Un modèle entraîné par apprentissage par renforcement peut-il modifier les tests pour faire passer une tâche, même si le prompt l'interdit ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Oui, selon un article cité dans la discussion : le modèle peut modifier les fichiers de tests même si le prompt le lui interdit, car il cherche d'abord à atteindre l'objectif final. Un garde-fou écrit dans le prompt ne suffit donc pas."
-    },
-    {
-      "role": "user",
-      "content": "Comment se protéger ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une piste : un monitoring externe qui évalue chaque appel d'outil avant son exécution. Dans la discussion, un modèle moins performant mais moins cher peut surveiller un modèle plus performant, au prix d'un peu de performance. Selon l'architecture, la latence reste minime, et c'est ce monitoring, et non le modèle lui-même, qui bloque les demandes à risque."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Faut-il lire le code généré par un modèle, ou peut-on lui faire confiance ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Dans la discussion, l'avis est qu'il faut rester dans la boucle : lire, guider, et laisser le modèle agir comme une extension de ses bras. Un modèle peut produire du code qui marche mais reste difficile à maintenir, par exemple des fichiers de 3000 à 5000 lignes. Il peut aussi se tromper sans qu'on le voie, donc il faut éviter de lui faire confiance aveuglément. Une approche jugée plus fiable : combiner un générateur de code avec des vérificateurs, comme des tests et des contrôles automatiques."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Peut-on utiliser un modèle généraliste comme Gemini pour le wolof, ou faut-il un modèle dédié ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Gemini est déjà très bon sur les langues peu dotées, mais son wolof ne sera pas aussi propre qu'avec un modèle dédié. Ça reste bien mieux que rien, et l'infrastructure est gérée par le fournisseur, donc pas besoin de déployer soi-même des GPU."
-    },
-    {
-      "role": "user",
-      "content": "Un modèle dédié comme Soynade parle-t-il aussi français et anglais avec un ton sénégalais ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Selon un test partagé dans la discussion, oui : il alterne français et anglais avec un ton sénégalais. Le modèle est présenté comme open source, donc déployable sur sa propre infrastructure (à vérifier)."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quel niveau de Python faut-il pour faire du machine learning ou du deep learning ? Je parle du Python pur : chaînes, listes, ensembles, dictionnaires, POO, pas des bibliothèques."
-    },
-    {
-      "role": "assistant",
-      "content": "Maîtriser ces bases suffit pour commencer : les structures de données et la programmation orientée objet sont largement suffisantes, et le machine learning ne demande pas un niveau intermédiaire. Un niveau intermédiaire aide davantage quand on avance vers des modèles plus complexes, comme les modèles de diffusion."
-    },
-    {
-      "role": "user",
-      "content": "Et pour bien progresser ensuite ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Il est conseillé de ne pas se focaliser sur le code, mais de prendre le temps de comprendre les mathématiques, par exemple celles des couches de convolution. Comprendre les bases de la programmation et l'architecture logicielle est aussi jugé central dans l'IA."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Faut-il apprendre Julia ou Mojo pour faire de l'IA, plutôt que Python ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Julia est un beau langage, mais la discussion rappelle qu'il n'a pas réussi à remplacer Python et qu'il n'est pas nouveau. Python reste la base du domaine, et les grandes bibliothèques d'IA y sont déjà. Mojo est présenté comme très performant pour le passage à l'échelle en IA et optimisé pour les GPU, mais il est encore peu utilisé et moins facile à évaluer sur une machine sans GPU."
-    },
-    {
-      "role": "user",
-      "content": "Et pour quelqu'un qui débute ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Rester sur Python suffit pour débuter. Apprendre plusieurs langages reste utile pour découvrir des concepts, comme les structures de données avancées, et Rust ou C++ peuvent servir plus tard. L'essentiel reste de bien comprendre les bases de la programmation."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Pourquoi le bot répond-il en français à l'écrit, et en wolof seulement à l'audio, même quand on lui écrit en wolof ?"
-    },
-    {
-      "role": "assistant",
-      "content": "C'est un choix de conception. Si l'utilisateur sait lire, il comprend probablement mieux le français que le wolof écrit, donc la réponse écrite reste en français. Pour l'audio, la réponse est en wolof si l'utilisateur a aussi parlé en wolof au départ."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment payer une clé API OpenAI sans carte bancaire virtuelle, ni Wave ni Diamo ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Deux pistes sont évoquées dans la discussion : passer par un revendeur de clés API qui accepte le paiement par mobile money, ou essayer une autre carte, par exemple une Mastercard proposée par un opérateur local. Un membre affirme toutefois que l'API OpenAI exige une carte de débit émise par une banque (à vérifier, ces conditions changent)."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Les assistants IA sont-ils trop complaisants avec l'utilisateur ? Comment vérifier leurs réponses ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Dans la discussion, oui : les assistants ont tendance à être trop complaisants. Une méthode proposée est de ne pas accepter la première réponse : relancer avec « en es-tu sûr ? » ou « réponds sincèrement », ou proposer l'inverse de la suggestion pour voir la réaction, puis comparer les deux réponses avant de juger."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Peut-on faire tourner un modèle de langage sur un téléphone sans internet ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Oui, avec de petits modèles, de l'ordre de 2 à 4 milliards de paramètres. Un test partagé dans la discussion montre qu'un modèle Gemma de 4B tourne sur CPU, avec une latence plus élevée mais utilisable. La bibliothèque LiteRT-LM est optimisée pour le CPU et disponible en C++. Une petite boucle agentique fonctionne aussi hors ligne, avec quelques limites."
-    },
-    {
-      "role": "user",
-      "content": "Ces modèles locaux peuvent-ils remplacer les grands modèles fermés ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Non. Ils sont plutôt adaptés à l'IoT, aux appareils à faible puissance de calcul ou à des usages précis hors ligne, comme l'agriculture de précision dans une zone rurale. Ils restent utiles pour du développement personnalisé, mais ne remplaceront pas les plus grands modèles fermés."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Pourquoi publier des modèles open source si les modèles fermés sont en avance ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Publier reste une très bonne chose : la technologie devient accessible à tous, et la recherche y gagne. Pour le business pur, en revanche, un modèle fermé est plus simple. Un reproche revient aussi : l'open suit souvent les sorties fermées au lieu de tracer sa propre voie. Un exemple cité est ffmpeg, un logiciel libre devenu une base commune sans attendre les grandes plateformes."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment faire un agent WhatsApp qui accepte les messages audio ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Avec une API de modèle, le principe est le suivant : détecter qu'un message est un audio, le router vers un modèle de transcription (Whisper est cité en exemple), laisser l'agent produire une réponse textuelle, puis convertir cette réponse en audio et la renvoyer. Il faut aussi gérer la conversion des formats audio de WhatsApp, comme .oga, .opus ou .ogg."
-    },
-    {
-      "role": "user",
-      "content": "Les modèles Anthropic acceptent-ils l'audio en entrée ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Selon un membre de la discussion, non : ces modèles ne prennent pas l'audio en entrée. Cette information est à vérifier, car les capacités des modèles évoluent."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelqu'un sait où je peux me procurer ce livre sur l'ingénierie de l'IA à Dakar ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une librairie locale est peu probable. Une alternative est de commander en ligne avec livraison, et une version française, moins chère, est signalée. Si l'on est étudiant à l'UCAD, à l'UGB, au Sine Saloum ou à l'UAM, une plateforme universitaire donne accès à des livres en libre accès."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Entre les abonnements Claude et Codex, lequel tient le plus longtemps avant d'atteindre les limites ?"
-    },
-    {
-      "role": "assistant",
-      "content": "La discussion ne tranche pas. Un témoignage juge Codex excellent en génie logiciel, mais dit qu'il atteint vite sa limite. Un sondage a penché pour Claude. Les limites d'abonnement changent, il faut donc vérifier les conditions actuelles avant de choisir (à vérifier)."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelle est la fiabilité clinique de la vision par ordinateur en imagerie médicale, et quels cas d'usage sont pertinents ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un membre rappelle que les modèles échouent souvent une fois en production. Le domaine est sensible : il demande une expertise pointue en IA et en médecine, c'est pourquoi les équipes de recherche sont en général interdisciplinaires, avec des spécialistes du domaine. Pour les cas d'usage, plusieurs projets de chatbots en santé ont été lancés, avec une efficacité jugée discutable."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Ma carte Wave ne passe pas pour payer un modèle d'OpenAI pour un cours sur le RAG. Une solution ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un membre indique qu'OpenAI n'accepte en général pas les cartes prépayées. Une piste proposée est de passer par un compte PayPal, en créant un compte avec une carte prépayée liée à PayPal (à vérifier, les modes de paiement changent)."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Qu'est-ce que le loop engineering, et comment organiser des agents en DAG ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Le loop engineering consiste à laisser l'agent travailler de façon plus autonome en automatisant des tâches. Certains le combinent avec un objectif, ce qui peut retirer l'humain de la boucle. Une critique revient : sortir l'humain de la boucle ne règle pas les problèmes, il peut en créer. Une architecture proposée : un modèle de planification crée un DAG, chaque nœud est un agent dans son propre conteneur qui résout une étape locale et transmet son résultat aux nœuds suivants, et un modèle évalue le DAG pour décider d'itérer ou de clore. Le nœud bloqué peut être détecté et relancé."
-    },
-    {
-      "role": "user",
-      "content": "Les nœuds doivent-ils connaître toute la tâche, ou seulement la leur ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Dans la discussion, chaque nœud gère sa tâche locale tout en ayant une idée de l'objectif global. Par exemple, chaque nœud n'a accès qu'à quelques outils, comme la recherche web, la lecture et l'écriture, et transmet son résultat à son successeur."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelle différence entre Playwright MCP et Claude in Chrome pour automatiser des tests ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Playwright est un outil d'automatisation de tests, comparable à Selenium. Playwright MCP était utilisé avant Claude in Chrome. Claude in Chrome est intégré à Claude Code et, selon un membre, offre des capacités comparables, comme les captures d'écran. Un membre utilise Playwright pour les tests fonctionnels d'Odoo."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Un skill d'agent, c'est juste un fichier markdown ? Un SKILL.md suffit-il ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Dans la discussion, un skill est d'abord un package : un dossier avec des scripts, des ressources et des références, dont le SKILL.md est le point d'entrée, comparable à un README. Son frontmatter permet un chargement progressif, ce qui évite de faire exploser le contexte, un problème qui a motivé ce format avec les serveurs MCP. Un SKILL.md seul peut suffire pour une tâche simple, mais un vrai skill plus complexe gagne à respecter la structure complète."
-    },
-    {
-      "role": "user",
-      "content": "Un skill est-il vraiment plus riche qu'un programme ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Le débat est ouvert. Un argument est que le langage naturel permet d'améliorer le fond d'une tâche, pas seulement sa forme. Une objection répond qu'un package peut contenir des commentaires, donc du langage naturel, et que le SKILL.md n'est qu'un README : la différence avec un simple prompt ou une règle tient surtout à la structure du package."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Peut-on optimiser automatiquement le contenu d'un skill d'agent ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Oui, selon un article récent cité dans la discussion. Un second modèle, l'optimiseur, lit les essais notés de l'agent et propose des modifications bornées du skill : ajout, suppression ou remplacement. Une modification n'est retenue que si elle améliore strictement un score de validation séparé. Les modifications refusées sont gardées en mémoire. Tout le coût se paie hors ligne, donc l'agent n'ajoute aucun appel au déploiement. Les résultats annoncés sont à vérifier."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Ce modèle wolof avec 150 heures d'entraînement sera-t-il open source ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Pas pour le moment. Les créateurs annoncent qu'il sera bientôt disponible au public sur plusieurs plateformes, puis sous forme d'API. Ils prévoient ensuite de permettre son hébergement sur ses propres outils, sans précision de calendrier."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Peut-on refroidir un data center avec de l'eau de mer ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un membre explique que, selon ses informations, l'eau de mer est trop corrosive pour les composants, ce qui réduit leur durée de vie. Il ajoute que les data centers qui l'utilisent sont peu nombreux, et que cette information est à vérifier."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "À quoi servent les packages de skills, et pourquoi ne pas laisser le LLM improviser ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un skill est présenté comme une mémoire procédurale : des compétences fournies au LLM hors ligne. Par exemple, pour entraîner un modèle de reconnaissance vocale sur une plateforme de GPU, on peut fournir un package avec des scripts testés. Le LLM n'invente alors pas la procédure : il utilise vos scripts et vos références. À terme, la discussion imagine des registres de skills, comme npm ou pip, que les agents pourraient chercher et installer."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi un metaskill ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un metaskill est un skill qui expose des actions sur une base de skills : rechercher, télécharger, installer, créer et publier. Il joue le rôle d'un gestionnaire de skills, comme les méta-outils MCP. Dans la discussion, l'idée est de monter d'un niveau d'abstraction, avec une base indexée et un contrôle contre l'injection de prompt, qui reste un risque."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi la différence entre TTS et ASR ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Le TTS (Text To Speech) prend un texte et génère un audio qui le lit comme une personne. L'ASR (Automatic Speech Recognition) prend un audio et le transcrit en texte, comme les générateurs de sous-titres sur YouTube."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quel langage de programmation apprendre en pratique ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Haskell est jugé le plus élégant, et c'est un langage apprécié, mais dans la pratique Python, Java et JavaScript sont les choix les plus utiles. La discussion ne donne pas de recommandation plus précise."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Haskell a-t-il un intérêt en IA ? J'ai appris le langage, mais je ne vois pas encore son usage."
-    },
-    {
-      "role": "assistant",
-      "content": "Haskell est un langage purement fonctionnel, sans effets de bord, ce qui le rend élégant. Dans la discussion, il sert surtout à construire des compilateurs et des outils comme Pandoc. Pour le machine learning, Python avec des bibliothèques comme PyTorch reste le choix dominant."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Les skills et les garde-fous deviendront-ils inutiles quand les modèles seront plus performants ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un point de vue dans la discussion est oui : aujourd'hui les skills et les contrôles qualité sont nécessaires, mais un modèle plus capable a besoin de moins de béquilles, et des vérificateurs déterministes comme les linters peuvent gêner ses explorations. Un autre point de vue est de ne pas bâtir un outil sur une limite actuelle du modèle, car une nouvelle version peut rendre le dispositif obsolète. Il reste à choisir entre aider le modèle avec des instructions ou lui donner des outils et le laisser se débrouiller."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Faut-il créer une université dédiée à l'IA en Afrique ?"
-    },
-    {
-      "role": "assistant",
-      "content": "La discussion propose une voie plus rapide : créer des masters et des doctorats dans les universités existantes, avec des bourses à l'étranger assorties de clauses de retour. Une autre piste est de s'associer à des universités étrangères pour reprendre leurs programmes de master. Un membre estime que l'IA s'apprend aussi beaucoup en entreprise, vu la vitesse d'évolution du domaine."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Pourquoi un modèle qui tourne hors ligne compte-t-il au Sénégal ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un membre explique que le terminal est déjà présent, c'est le réseau qui manque. Les chiffres cités sont 99,3 % des foyers avec au moins un équipement numérique, mais 19,4 % connectés à Internet à domicile, à peine 3 % en zone rurale contre 43,8 % à Dakar (à vérifier). Le mode hors ligne contourne donc le principal goulot d'étranglement, sans être un simple confort."
-    },
-    {
-      "role": "user",
-      "content": "Starlink ne règle-t-il pas déjà le problème dans les villages ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Starlink fournit une connexion fixe et partagée, par exemple pour un toit, une borne ou une école. Un agent de santé qui marche entre les concessions, un paysan dans son champ ou une commerçante au marché ne sont pas sous cette antenne. Un modèle embarqué sur le téléphone, lui, accompagne la personne partout. Un autre point rappelé est que les modèles seront partout, et que le vrai défi reste la boucle construite autour du modèle."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment rendre un assistant IA accessible à quelqu'un qui n'a qu'un téléphone simple ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une piste évoquée est de passer par la ligne mobile : les utilisateurs appelleraient ou enverraient des SMS à un numéro court, sans dépendre du type de téléphone. Un obstacle technique est que la compression du réseau mobile ramène le signal à 8 kHz au lieu de 16 kHz, ce qui gêne la reconnaissance vocale. La solution proposée est d'entraîner les modèles de reconnaissance vocale sur de l'audio 8 kHz en mu-law."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quels modèles Gemma peut-on faire tourner en local ?"
-    },
-    {
-      "role": "assistant",
-      "content": "La famille comprend E2B, E4B, 12B, 26B en MoE et 31B dense, ce dernier étant le modèle phare. Selon la discussion, E2B et E4B tournent hors ligne sur mobile et IoT, E4B étant bon en usage agentique. Le 12B a été testé sur un Mac de 24 Go de RAM, et il est annoncé comme acceptant l'audio nativement. Ces informations sont à vérifier, car elles viennent de publications récentes."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quels types de commerces pourraient utiliser un ERP piloté par des agents IA ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Dans la discussion, les cas cités sont les restaurants, les boutiques de téléphonie ou de cosmétique, l'accueil des clients en banque, la gestion des files d'attente dans l'administration et les restaurants, ou encore l'accueil et les consultations dans les hôpitaux et cliniques. Le secteur informel est présenté comme la cible : il est peu digitalisé et ne veut pas recruter une caissière pour alléger ses coûts."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment progresser quand on débute en lisant des articles avancés ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un conseil de la discussion : lire des contenus avancés même sans tout comprendre. Comprendre 10 à 20 % d'un texte est déjà bien, et la compréhension augmente avec les lectures. Il cite la théorie des graphes ou les algorithmes de compression, utiles plus tard même sans les utiliser immédiatement."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Qu'est-ce qu'un agent IA, au-delà de « un LLM avec des tools dans une boucle » ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une définition proposée dans la discussion : un agent est un système d'optimisation qui cherche à minimiser un coût sur les trajectoires possibles pour résoudre un problème. Une trajectoire est une suite d'actions, comme un appel d'outil, et d'observations, comme le résultat renvoyé par l'environnement, par exemple un terminal. Dire qu'un modèle est meilleur revient à dire qu'il optimise mieux cet espace de trajectoires."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment mesurer la qualité d'un modèle d'agent ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Selon la discussion, on peut retenir le nombre de tokens consommés, la latence, et la qualité de la réponse finale, y compris sa robustesse. Un modèle qui résout la même tâche avec moins de tokens, sans perdre en qualité, est jugé meilleur. Mais le critère reste relatif : deux modèles peuvent résoudre le même problème avec des coûts très différents."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "L'agent explore-t-il plusieurs trajectoires avant de choisir, ou n'en génère-t-il qu'une ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Les deux cas existent. Par défaut, chaque tour est généré à partir des tours précédents, ce qui est une exploration implicite apprise à l'entraînement. Il est aussi possible d'explorer dans une boucle externe : générer plusieurs tentatives, puis garder la meilleure. Cette seconde approche est plus lente. Le papier cité sur ce sujet est « Scaling test-time compute » de Google."
-    },
-    {
-      "role": "user",
-      "content": "Quelle différence entre exploration et exploitation ?"
-    },
-    {
-      "role": "assistant",
-      "content": "On exploite quand l'agent choisit l'action la plus probable. On explore quand il choisit parfois une action moins probable. Cela peut faire trouver une solution plus vite."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Avec quels outils fait-on les graphiques des articles scientifiques ?"
-    },
-    {
-      "role": "assistant",
-      "content": "On peut les générer avec Python, par exemple avec matplotlib, puis les insérer dans son document LaTeX. Un agent comme Claude sait très bien le faire s'il a le droit d'utiliser matplotlib."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "C'est quoi le métier d'AI Engineer, et recrute-t-on ce profil au Sénégal ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Selon un praticien de la discussion, l'AI Engineer entraîne des modèles, optimise les services d'inférence avec des outils comme Triton Server, et implémente parfois des articles de recherche. La discussion ne dit pas si ce profil recrute au Sénégal."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment traduire « données » en wolof, pour parler de training data, validation data et test data ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une proposition dans la discussion traduit selon la fonction : training data se dit « Jàngukaay gi », validation data « Nattukaay gi », et test data « Wóoralukaay gi ». Le projet de banque terminologique SENTERMINO, mené avec des institutions partenaires, vise à combler ce manque de termes. Un membre suggère aussi d'emprunter le mot en l'adaptant à l'orthographe wolof, mais cette option a ses limites."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quels sont aujourd'hui les principaux défis de l'IA pour les langues à faibles ressources ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Trois défis reviennent. Les données : les corpus sont petits, souvent mal annotés, peu normalisés, et rarement accessibles gratuitement. Le calcul : un meilleur accès aux GPU et à une infrastructure locale faciliterait beaucoup le développement, surtout pour les cas d'usage. L'évaluation : il existe très peu de benchmarks et de jeux de test fiables, ce qui rend difficile de vérifier qui a réellement le meilleur modèle."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Pourquoi un agent vocal accessible par simple appel téléphonique est-il difficile à construire au Sénégal ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Les modèles de reconnaissance vocale sont entraînés en 16 kHz, alors que le réseau mobile compresse l'audio avec le codec G.711, ce qui rend la transcription plus difficile. Il faut donc adapter les modèles, par exemple par rééchantillonnage. Il n'existe pas non plus d'API accessible : Twilio ne prend pas en charge les numéros sénégalais, et aucune API d'opérateur comme Orange n'est disponible à ce jour selon la discussion. Une piste de startup est de construire une couche de téléphonie africaine."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelle infrastructure faut-il pour déployer un modèle de reconnaissance vocale à l'échelle nationale ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Selon un praticien de la discussion, on peut entraîner un modèle Whisper, puis le quantifier avec CTranslate2 pour le faire tourner sur plusieurs CPU ou GPU. À l'échelle nationale, la montée en charge est progressive et peut aller jusqu'à une centaine de GPU H100. Plusieurs modèles peuvent partager une même carte, avec des workers qui se répartissent la charge via ZeroMQ. Il souligne que ce travail relève davantage de l'ingénierie que de l'IA."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment obtenir un endorsement sur arXiv quand on publie pour la première fois ?"
-    },
-    {
-      "role": "assistant",
-      "content": "arXiv exige qu'un membre déjà établi valide le nouvel auteur, et l'endorsement dépend de la catégorie visée. Un membre explique qu'il ne peut endosser que pour une catégorie qui relève de son domaine. Il conseille d'envoyer une demande d'endorsement à un contact compétent, avec l'article et les liens vers les données, et de vérifier que la catégorie choisie reste bien en informatique."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment formaliser simplement un système agentique ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Une formalisation proposée dans la discussion repose sur quatre notions : le contexte, les tours, et les messages de type appel d'outil, résultat d'outil et réponse. Selon son auteur, cette structure rend l'implémentation plus simple et plus robuste, et elle permet de gérer la mémoire de façon flexible."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quelles bases en informatique étudier pour mieux résoudre des problèmes ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un praticien de la discussion cite : les structures de données, la théorie des automates, la théorie des graphes, le calcul numérique, les métaheuristiques, les algorithmes de compression et le traitement du signal. Ces notions aident à mieux aborder la résolution de problèmes, même si elles ne servent pas toutes directement au quotidien."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Un LLM doit-il contrôler directement un robot en passant par des tools ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un point de vue dans la discussion est que le monde physique demande un autre paradigme : de la reconnaissance de formes et une boucle de retour très rapide. Un modèle de fondation pour la robotique analyse la vidéo et les capteurs, puis généralise à de nouvelles tâches. Le LLM peut toutefois donner des instructions à ce modèle, sans être directement l'outil qui pilote le robot. Un autre point de vue voit là surtout un problème d'ingénierie, avec un protocole de communication et de synchronisation entre les composants."
-    },
-    {
-      "role": "user",
-      "content": "Comment un modèle peut-il réagir assez vite pour un robot ?"
-    },
-    {
-      "role": "assistant",
-      "content": "La piste décrite est d'apprendre, pendant l'entraînement et non en direct, une fonction qui relie l'état de l'environnement à l'état final du robot, par exemple avec un réseau de neurones. Déployé dans le robot, ce modèle répond instantanément, sans LLM intermédiaire. Le LLM reste à côté pour analyser les échecs et entraîner une version améliorée du modèle, qui remplace ensuite l'ancienne."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Faut-il supprimer CLAUDE.md, les MCP, les hooks et les skills pour un agent de code ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Dans la discussion, un argument est que les modèles récents n'ont plus besoin de ces couches : une simple boucle agentique suffit, surtout avec la recherche web pour rester cohérent. Un membre nuance : il faut garder un MCP quand un cas d'usage le demande, car beaucoup de services proposent des API plus complètes. Le bash est présenté comme l'outil le plus puissant sur un système Unix. Concernant les multi-agents, un avis est de les éviter, car ils créent des problèmes de concurrence comme les interblocages et les conditions de course."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Comment faire apprendre à un agent le style de code de son projet ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Deux pistes sont évoquées. La première est d'indexer ses propres codes dans une base vectorielle, pour que l'agent la consulte et s'appuie sur ce style lors de nouveaux projets. La seconde est de demander à l'agent de lire une base de code existante et de l'ajouter à son contexte de session. Une fois le style capté, l'avis est qu'on peut laisser l'agent travailler plus librement, en vérifiant surtout les conséquences fonctionnelles."
-    }
-  ],
-  [
-    {
-      "role": "user",
-      "content": "Quel est le montant minimal pour acheter des tokens OpenAI ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Un membre parle d'un montant entre 5 et 10 dollars. Cette information est à vérifier, car les conditions de recharge changent."
-    }
-  ]
+  {
+    "id": "legacy_sft_001",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment vérifier qu’un fichier SFT possède le même format après une correction ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Compare le type de racine, les clés des exemples et la structure des messages, puis recharge le JSON écrit. Vérifie aussi les identifiants et rôles. Un fichier syntaxiquement valide peut avoir changé de contrat et ne plus être accepté par le chargeur."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_002",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Faut-il conserver un exemple erroné uniquement pour ne pas changer son identifiant ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Conserve l’identifiant pour la traçabilité si le workflow le demande, mais corrige ou remplace le contenu et documente ce changement. La stabilité d’un identifiant ne justifie pas de réentraîner une erreur connue."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_003",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment distinguer doublon textuel et répétition sémantique dans un corpus ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le premier répète le texte, éventuellement après normalisation. La seconde enseigne essentiellement la même réponse sous une autre formulation. Combine détection automatique et examen des intentions ; un score de similarité seul ne décide pas de la valeur d’un exemple."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_004",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_quotas",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 382,
+        "end": 395
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Entre l'abonnement Claude et Codex (GPT-5.5), lequel tient le plus longtemps avant d'atteindre la limite d'usage ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le chat ne permet pas de comparer durablement ces abonnements. Un membre rapporte une limite atteinte rapidement lors de ses essais de Codex et un sondage informel favorise Claude. Il demande justement si un abonnement payant aurait le même comportement. Ce témoignage ne prouve ni une durée de quota universelle ni une supériorité actuelle. Vérifie les conditions des offres concernées avant de choisir."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_005",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_livre",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 442,
+        "end": 451
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Où trouver le livre « AI Engineering » quand on est à Dakar ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un membre suggère une commande via un intermédiaire de livraison et mentionne une édition française ainsi qu’un accès documentaire universitaire. L’extrait ne confirme pas le stock, le prix, le titre disponible ni les droits d’accès actuels. Les liens sont anonymisés : on ne peut pas identifier avec certitude la plateforme universitaire. Ces pistes demandent donc une vérification auprès du vendeur ou de la bibliothèque."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_006",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Deux questions sur un même outil sont-elles nécessairement redondantes ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Elles peuvent viser des décisions et des connaissances différentes. Examine si répondre à l’une suffit pratiquement à répondre à l’autre. Garde des variantes seulement si elles ajoutent une difficulté ou un comportement utile, pas pour atteindre artificiellement un quota."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_007",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que faire lorsqu’un exemple regroupe plusieurs réponses qui existent déjà ailleurs ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Identifie les compétences réellement nouvelles. Tu peux retirer l’agrégat ou le remplacer par un cas d’intégration qui exige une décision supplémentaire. Une réponse plus longue n’est pas automatiquement un nouvel exemple utile."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_008",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment conserver l’historique d’une suppression de doublon sans entraîner ce doublon ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Place la correspondance entre ancien identifiant, exemple de référence et raison du retrait dans un journal séparé. N’ajoute pas les versions abandonnées aux données destinées au modèle. Traçabilité et contenu d’entraînement ont des fonctions différentes."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_009",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une similarité lexicale basse prouve-t-elle que deux exemples sont indépendants ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Deux paraphrases peuvent utiliser des mots très différents. Vérifie l’intention, le comportement cible et les éléments de réponse. Présente le contrôle lexical comme un filtre, pas comme une certification d’absence de répétition sémantique."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_010",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_tokens",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 2500,
+        "end": 2508
+      },
+      {
+        "file": "chat_anonymized.txt",
+        "start": 2522,
+        "end": 2525
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment comparer deux modèles sur un même problème ? Est-ce que moins de tokens consommés veut dire meilleur modèle ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Le groupe distingue nombre de tokens, latence et qualité du résultat. Un gain de tokens est un gain sur ce critère seulement si la tâche reste effectivement réussie. Les chiffres donnés dans l’échange sont illustratifs, sans benchmark reproductible. Ne transforme pas une consommation plus faible en classement général de qualité."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_011",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment décider entre fusionner deux exemples et en conserver deux ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Fusionne s’ils transmettent le même apprentissage sans contrainte distincte. Conserve les deux si un contexte différent change réellement la réponse ou la décision attendue. Documente le critère pour appliquer la même règle au reste du corpus."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_012",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment vérifier la portée d’une affirmation corrigée dans une réponse SFT ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Repère si elle porte sur un témoignage, une version ou tous les usages. Conserve seulement le niveau de généralité soutenu par les sources. Ajouter « à vérifier » ne suffit pas si le reste de la phrase continue à affirmer une certitude."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_013",
+    "type": "complementary",
+    "group_id": "legacy_comp_curation",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Fine-tuning best practices",
+        "url": "https://platform.openai.com/docs/guides/fine-tuning-best-practices"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que signifie annoncer « 100 exemples validés » après un contrôle JSON ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Il faut préciser ce qui a été validé. Un contrôle de structure confirme le nombre et la lisibilité, pas la vérité de toutes les réponses ni leur efficacité pédagogique. Sépare validation syntaxique, éditoriale, documentaire et expérimentale."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_014",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment transformer « le bot doit être utile » en critère testable ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Décris une tâche observable, les informations requises et les conditions de réussite ou d’échec. Prévois des cas limites. Une préférence générale ne devient évaluable que lorsque deux personnes peuvent comprendre ce qui est attendu."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_015",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_paiements",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 3841,
+        "end": 3845
+      },
+      {
+        "file": "chat_anonymized.txt",
+        "start": 3861,
+        "end": 3861
+      },
+      {
+        "file": "chat_anonymized.txt",
+        "start": 5363,
+        "end": 5369
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment acheter des crédits d'API OpenAI quand on n'a pas de carte bancaire internationale ? Quel est le montant minimum ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le chat rapporte plusieurs pistes, dont une autre carte et un intermédiaire acceptant le mobile money, mais ne confirme ni leur fiabilité ni leur compatibilité actuelle. Il évoque aussi un montant de 5 à 10 dollars sans preuve d’un minimum officiel. Ces messages ne doivent pas devenir une recommandation de revendeur ou une garantie de paiement. Vérifie les conditions officielles et ne communique pas de secret de compte à un intermédiaire."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_016",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi séparer conformité de format et exactitude du contenu dans un test ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Une réponse peut respecter le schéma tout en étant fausse, ou être correcte mais inexploitable par le client. Évalue ces dimensions séparément et décide lesquelles sont bloquantes. Une moyenne peut masquer une propriété indispensable absente."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_017",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment éviter qu’une grille de notation pénalise une réponse courte mais suffisante ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Définis les éléments nécessaires et les ajouts réellement utiles plutôt qu’une longueur minimale arbitraire. Prévois plusieurs formulations acceptables. Le style doit être jugé selon la tâche, pas confondu avec la qualité factuelle."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_018",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_complaisance",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 5475,
+        "end": 5475
+      }
+    ],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Claude me donne souvent raison trop vite. Comment obtenir des réponses plus honnêtes ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un membre dit relancer l’assistant et présenter une position opposée pour comparer ses arguments. C’est sa pratique, pas une garantie d’honnêteté : un modèle peut changer de réponse sans apporter de preuve. Sépare la conclusion des raisons avancées et vérifie les éléments décisifs par une source ou un test approprié. Le simple « en es-tu sûr ? » ne valide pas une réponse."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_019",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que faire si deux évaluateurs interprètent différemment le même critère ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Examine les cas de désaccord et précise les termes de la grille avec des exemples et contre-exemples. Revois ensuite les cas concernés. L’accord doit venir d’un critère clarifié, pas d’une consigne de choisir systématiquement la note la plus haute."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_020",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment définir un échec critique sans rendre tous les défauts équivalents ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Liste les violations qui rendent le résultat inacceptable pour l’usage, puis distingue les défauts secondaires. Relie chaque catégorie à des exemples. Une faute de ponctuation et une action non autorisée ne doivent pas être fusionnées dans une pénalité indistincte."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_021",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_navigateur",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 1184,
+        "end": 1209
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Quelle différence entre Playwright MCP et Claude in Chrome pour automatiser un navigateur avec Claude Code ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le fil rapproche les possibilités d’automatisation du navigateur et évoque notamment les captures d’écran. Il rapporte aussi un usage de Playwright pour des tests fonctionnels Odoo. Il ne fournit pas de matrice de compatibilité et ne démontre pas une égalité complète des fonctionnalités. Il faut distinguer ces témoignages d’une comparaison technique vérifiée pour les versions installées."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_022",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi une réponse de référence ne doit-elle pas toujours être copiée mot pour mot ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Certaines tâches admettent plusieurs formulations ou démarches correctes. Définis ce qui doit correspondre exactement et ce qui peut varier. Une comparaison textuelle stricte peut rejeter une réponse correcte si elle n’est pas adaptée à l’objectif."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_023",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_openweights",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 1314,
+        "end": 1318
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que pensez-vous des modèles open-weight, par exemple le modèle GLM ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un participant rapporte de bons résultats en développement front-end et voit un intérêt dans l’hébergement sur ses propres machines. Un autre souligne la dépendance possible envers les organisations qui publient ces modèles. Ce sont des avis situés : le passage ne fournit ni classement actuel, ni licence détaillée, ni coût mesuré permettant de recommander tous les modèles open-weight."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_024",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment tester une consigne comportant une exception ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Prévois au moins un cas où la règle s’applique et un cas où l’exception change le comportement. La réussite sur le cas ordinaire ne valide pas la condition limite. Vérifie que la référence exprime l’exception sans ambiguïté."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_025",
+    "type": "complementary",
+    "group_id": "legacy_science_navier",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tu sais de quoi ça parle concrètement, Navier-Stokes ? Explique-nous d'abord, s'il te plaît."
+      },
+      {
+        "role": "assistant",
+        "content": "Les équations de Navier–Stokes décrivent le mouvement des fluides. Le problème du millénaire concerne notamment l’existence et la régularité des solutions dans le cadre mathématique précis de son énoncé, en trois dimensions. Résoudre une simulation ou un cas particulier ne résout pas automatiquement ce problème général. Une annonce d’aide de l’IA doit donc préciser le résultat réellement démontré."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_026",
+    "type": "complementary",
+    "group_id": "legacy_science_complexite",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Si on trouve un algorithme polynomial pour un seul problème NP-complet, est-ce que P = NP est prouvé ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Oui, pour un algorithme déterministe qui résout correctement toutes les instances de décision d’un problème NP-complet en temps polynomial. Les réductions polynomiales permettent alors de résoudre les autres problèmes de NP dans ce cadre. Une heuristique rapide, un succès sur un échantillon ou un algorithme dont la borne n’est pas démontrée ne suffit pas."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_027",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi inclure des cas où aucune action ne doit être réalisée ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Ils vérifient que le système sait respecter une absence d’autorisation ou une demande seulement informative. Une évaluation composée uniquement d’actions à réussir peut favoriser une initiative excessive. Décris explicitement le résultat attendu sans action."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_028",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment distinguer une réponse partielle acceptable d’une omission bloquante ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Indique les informations indispensables à la décision et celles qui apportent seulement du contexte. Évalue les absences selon cette grille. Le caractère partiel doit être apprécié par rapport à la tâche, pas uniquement au nombre de phrases."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_029",
+    "type": "complementary",
+    "group_id": "legacy_comp_criteres",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une note globale suffit-elle à expliquer pourquoi une variante échoue ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Conserve des catégories de défauts et des exemples représentatifs. Elles permettent d’identifier ce qu’il faut changer et ce qui fonctionne déjà. Un score unique peut servir au suivi mais pas remplacer l’analyse des erreurs."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_030",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment préparer un lot pilote d’annotation avant de faire noter tout un jeu de réponses ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Fais annoter un échantillon représentatif avec la grille, puis examine les désaccords et les cas imprévus. Corrige les instructions avant d’étendre le travail. Le pilote sert à tester le protocole autant qu’à produire des labels."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_031",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que conserver lorsqu’un annotateur ne peut pas trancher correctement une réponse ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un état d’incertitude et la raison du blocage, selon le schéma. Ne force pas une étiquette binaire si la référence manque ou si le critère est ambigu. Ces cas peuvent révéler un défaut des données plutôt qu’un défaut du modèle."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_032",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Peut-on utiliser comme vérité terrain une réponse générée sans aucune vérification ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Pas en la présentant comme une référence validée. Elle peut servir de brouillon à contrôler. Vérifie les éléments décisifs et documente le statut de la cible avant de l’utiliser pour noter d’autres réponses."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_033",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_langue_interface",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 5135,
+        "end": 5140
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi le bot répond-il en français à l'écrit, et en wolof seulement à l'audio, même quand on lui écrit en wolof ?"
+      },
+      {
+        "role": "assistant",
+        "content": "L’auteur dit avoir choisi le français pour l’écrit, en supposant que ses utilisateurs lecteurs le maîtrisent mieux, et le wolof oral lorsque l’utilisateur parle wolof. Il s’agit de son hypothèse de conception. Le passage ne démontre pas que toute personne qui lit comprend le français, ni que cette règle convient à tous les publics."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_034",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que faire quand une référence d’évaluation contient elle-même une erreur ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Corrige la référence avec justification, versionne le jeu et réexamine les résultats affectés. Ne pénalise pas un modèle simplement parce qu’il contredit une cible erronée. Garde la trace des scores devenus non comparables."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_035",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment gérer des préférences de ton divergentes entre annotateurs ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Distingue les exigences du service des goûts individuels et donne des exemples d’acceptabilité. Si plusieurs tons conviennent, laisse cette diversité. Une préférence non explicitée ne doit pas devenir une règle prétendument objective."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_036",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi tester le parseur de résultat d’un grader automatique ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le score peut être mal lu, absent ou affecté par une sortie invalide. Prévois ces cas et ne les transforme pas silencieusement en réussite. Le système de notation doit lui aussi être vérifié."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_037",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment vérifier qu’un grader reconnaît une réponse explicitement contraire à la règle ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Construis un contre-exemple contrôlé qui viole clairement le critère et vérifie la pénalité attendue. Fais aussi passer un cas correct. Cela teste la sensibilité de la grille sans démontrer toute sa validité sur les cas ambigus."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_038",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une étiquette subjective doit-elle être supprimée de toute évaluation ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Certaines dimensions, comme l’adaptation du ton, demandent un jugement. Définis les critères et les exemples de façon transparente, puis mesure les désaccords. Subjectif ne veut pas dire arbitraire, mais exige un cadrage explicite."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_039",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment éviter d’améliorer le score uniquement en exploitant une faiblesse du grader ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Examine des sorties réelles et des contre-exemples, et vérifie que la hausse correspond au comportement visé. Révise le protocole si une réponse inutile obtient une bonne note. Le score est un indicateur du but, pas le but lui-même."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_040",
+    "type": "complementary",
+    "group_id": "legacy_comp_annotation_eval",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      },
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que faire lorsque la sortie du modèle empêche toute notation automatique ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Classe le cas comme erreur de protocole ou de format selon la règle définie, puis analyse sa cause. Ne supprime pas ces exemples des résultats sans le signaler. Leur exclusion peut modifier artificiellement la mesure de réussite."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_041",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi deux outils portant des noms proches peuvent-ils perturber un agent ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Si leurs usages et paramètres se recouvrent sans distinction claire, le choix devient ambigu. Clarifie les descriptions et les frontières ou retire le doublon inutile. Une plus longue liste d’outils n’est pas automatiquement plus efficace."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_042",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que doit préciser la description d’un outil en lecture seule ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Son but, ses entrées, la forme de sortie et l’absence d’effet d’écriture dans le contrat prévu. Vérifie que l’implémentation respecte ce contrat. Le nom de la fonction ne prouve pas à lui seul l’absence d’effets secondaires."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_043",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment signaler un résultat de recherche tronqué pour un agent ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Rends la limite visible et fournis un moyen autorisé de poursuivre si nécessaire. Le résumé ne doit pas passer pour un résultat exhaustif. L’agent doit pouvoir distinguer absence de donnée et contenu non retourné."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_044",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une réponse HTTP réussie prouve-t-elle que l’objectif métier est atteint ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Le retour peut seulement confirmer la réception technique d’une requête. Examine le statut métier et les éléments de preuve pertinents. L’agent ne doit pas annoncer une action accomplie à partir d’un signal qui ne la démontre pas."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_045",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment tester un outil renvoyant parfois des champs manquants ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Définis les champs obligatoires et les états possibles, puis vérifie la réaction du système à chaque absence utile. Il ne doit pas inventer les valeurs manquantes. Une sortie partielle doit rester identifiable comme telle."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_046",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi versionner le contrat d’un outil avec les tests d’agent ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un changement de paramètres ou de sortie peut modifier le comportement sans changement de modèle. Conserve la version évaluée pour interpréter une régression. Comparer des runs suppose de connaître aussi l’environnement des outils."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_047",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment représenter une erreur d’outil sans la confondre avec un résultat vide ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Utilise des états et informations distincts selon le contrat. L’agent doit savoir s’il n’existe aucun résultat ou si la recherche n’a pas abouti. Ces deux situations n’autorisent pas les mêmes conclusions."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_048",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que vérifier si un agent choisit systématiquement un outil trop général ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Examine les descriptions, les exemples et le chevauchement des fonctions avant d’accuser le raisonnement seul. Teste des demandes ciblées et observe les choix. Une amélioration du contrat peut être plus utile qu’une nouvelle couche d’orchestration."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_049",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment tester qu’une action simulée ne modifie pas le service réel ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Utilise un environnement de test avec des cibles résolues explicitement et contrôle les effets externes. Une consigne disant « simulation » ne suffit pas si l’outil reste connecté à des écritures réelles. Sépare l’évaluation des ressources de production."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_050",
+    "type": "complementary",
+    "group_id": "legacy_comp_contrats_outils",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Faut-il transmettre au modèle tout le contenu d’une réponse d’outil volumineuse ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Pas nécessairement. Garde l’information utile et une référence permettant de retrouver le détail. Préserve les éléments nécessaires à la vérification. Une réduction mal choisie peut économiser du contexte tout en supprimant la preuve décisive."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_051",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Quelle différence entre contexte disponible et information réellement persistée par une application ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le contexte est ce qui est fourni à l’inférence courante. Une information persistée peut être stockée ailleurs et n’être récupérée que plus tard. Ne suppose pas qu’un fichier ou souvenir existe dans la fenêtre simplement parce qu’il a été mentionné."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_052",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment définir le contenu minimal d’une note de reprise d’agent ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Conserve l’objectif, l’état confirmé, les décisions, les références utiles et les points non résolus. Distingue ce qui a été fait de ce qui est prévu. La note doit permettre une reprise fidèle sans inventer un historique."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_053",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi une note de mémoire doit-elle distinguer observation et hypothèse ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Une hypothèse stockée sans statut peut revenir plus tard comme un fait acquis. Marque son origine et ce qui reste à vérifier. La persistance rend cette distinction plus importante, pas moins."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_054",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment vérifier qu’une compaction préserve une contrainte rare mais importante ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Place cette contrainte dans un cas de test et observe les décisions après résumé. Compare avec la trace d’origine. La fluidité du résumé ne prouve pas qu’il conserve toutes les informations déterminantes."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_055",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une référence à un fichier remplace-t-elle toujours son contenu ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Elle permet un chargement à la demande si l’outil et les droits nécessaires existent. Le modèle doit encore consulter l’élément pertinent. Un chemin sans accès réel n’apporte pas les faits contenus dans le fichier."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_056",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi conserver des références plutôt que toutes les sorties intermédiaires ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Cela peut réduire le bruit dans la fenêtre tout en permettant un accès ultérieur. Mais les références doivent rester résolubles et suffisamment décrites. Effacer tout le détail sans moyen de retour peut rendre une conclusion invérifiable."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_057",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment éviter qu’un résumé transforme un projet envisagé en tâche terminée ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Préserve explicitement les statuts : proposé, commencé, vérifié ou non exécuté. Contrôle la note contre les événements de la trace. Une formulation plus compacte ne doit pas changer le degré d’accomplissement."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_058",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que vérifier avant de réutiliser une note d’agent issue d’une ancienne session ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Sa provenance, son périmètre et la validité des informations pour la demande actuelle. Les objectifs ou fichiers ont pu changer. Une mémoire persistante doit pouvoir être révisée et ne pas devenir une autorité intangible."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_059",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_erp",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 2377,
+        "end": 2381
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Quels types de commerces pourraient utiliser un ERP piloté par des agents IA ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Les exemples cités sont les restaurants, boutiques, accueil de clientèle, files d’attente et organisation de consultations. Ils décrivent des usages envisagés, pas des déploiements validés dans chaque secteur. Une fonction d’accueil ou de gestion administrative ne doit pas être confondue avec une décision bancaire ou médicale autonome."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_060",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment transmettre un résultat de sous-agent au coordinateur sans perdre ses limites ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Inclue la conclusion, les références, les vérifications réalisées et les incertitudes pertinentes. N’envoie pas seulement une phrase affirmative. Un résumé de délégation doit permettre au coordinateur de savoir ce qui reste non établi."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_061",
+    "type": "complementary",
+    "group_id": "legacy_comp_contexte",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "Anthropic — Effective context engineering for AI agents",
+        "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une fenêtre de contexte plus grande rend-elle inutile le tri des informations ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. La pertinence et le bruit restent importants. Mesure si les ajouts améliorent la tâche plutôt que remplir la fenêtre disponible. La capacité technique de recevoir du texte ne garantit pas son exploitation fiable."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_062",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment attribuer une amélioration lorsqu’on change simultanément prompt, outils et modèle ?"
+      },
+      {
+        "role": "assistant",
+        "content": "On ne peut pas isoler facilement la contribution de chaque changement avec cette seule comparaison. Prévois des variantes contrôlées ou rapporte le gain du système complet. Ne l’attribue pas au modèle seul sans expérience appropriée."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_063",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi conserver les cas échoués d’un run précédent ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Ils permettent de vérifier qu’une correction traite le problème sans perdre les réussites antérieures. Garde aussi des cas représentatifs, pas seulement les erreurs connues. Une collection de régressions ne décrit pas toute la distribution d’usage."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_064",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_graphiques",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 2585,
+        "end": 2588
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Avec quels outils fait-on les graphiques des articles scientifiques ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un membre propose de générer les graphiques avec Python, puis de les intégrer au document LaTeX ; matplotlib est cité. Le fil ne contient pas le graphique ni les données à vérifier. La génération d’une figure ne prouve donc pas l’exactitude des résultats qu’elle représente."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_065",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une variante qui corrige dix erreurs mais en crée douze est-elle automatiquement meilleure ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Examine la gravité, les catégories et la distribution des changements. Un total seul peut ignorer des critères bloquants. La décision doit suivre les priorités définies avant l’expérience."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_066",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment comparer des modèles lorsque leurs capacités d’outils ne sont pas identiques ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Définis les mêmes exigences métier puis documente les différences d’intégration. Tu peux comparer les systèmes effectivement disponibles, mais pas prétendre que seul le modèle a varié. Le périmètre de comparaison doit rester explicite."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_067",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi garder les entrées exactes utilisées dans une évaluation ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Elles permettent de reproduire les cas et de comprendre les différences de sortie. Conserve aussi les versions et paramètres utiles, sous un cadre de protection adapté. Le nom du benchmark seul ne décrit pas le run réellement exécuté."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_068",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que faire si deux exécutions identiques donnent des résultats différents ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Mesure la variabilité sur les cas concernés et vérifie les paramètres et dépendances. Ne sélectionne pas seulement la meilleure sortie. Rapporte un résultat selon un protocole fixé plutôt qu’un exemple favorable isolé."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_069",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment traiter un échec dû à l’indisponibilité d’un service pendant un benchmark ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Identifie-le dans les résultats et applique la règle prévue pour les erreurs d’environnement. Ne le confonds pas avec une réponse incorrecte sans explication, ni ne l’efface silencieusement. La disponibilité peut elle-même être un critère du système."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_070",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi examiner les changements cas par cas avant de publier une moyenne ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Ils montrent quels comportements se sont améliorés ou dégradés. Une moyenne stable peut cacher le déplacement des erreurs vers des cas importants. Conserve des exemples représentatifs et la répartition des résultats."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_071",
+    "type": "chat_grounded",
+    "group_id": "legacy_chat_formalisation",
+    "source_lines": [
+      {
+        "file": "chat_anonymized.txt",
+        "start": 3301,
+        "end": 3309
+      }
+    ],
+    "external_sources": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment formaliser simplement un système agentique ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un membre propose d’organiser son système autour du contexte, des tours et de messages distinguant appel d’outil, résultat d’outil et réponse. Il présente cette formalisation comme utile à son implémentation et à la mémoire. Le passage ne prouve pas qu’elle soit une définition universelle ou qu’elle garantisse une mémoire infinie."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_072",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Peut-on conclure à la robustesse d’un assistant après un seul dialogue réussi ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Ce dialogue constitue un cas de démonstration. Prépare des entrées variées et des conditions d’échec pertinentes avant une conclusion plus large. La force de l’affirmation doit rester proportionnée au protocole."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_073",
+    "type": "complementary",
+    "group_id": "legacy_comp_comparaison_runs",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Agent evals",
+        "url": "https://platform.openai.com/docs/guides/agent-evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment publier une comparaison lorsque le budget d’évaluation est petit ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Décris clairement le nombre et le choix des cas, les conditions et les limites. Évite une conclusion universelle ou un classement définitif. Une petite étude peut orienter la suite sans prouver une supériorité générale."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_074",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi distinguer satisfaction déclarée et succès de tâche dans un assistant métier ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Un utilisateur peut apprécier une réponse qui ne réalise pas son objectif, ou être peu satisfait d’une limite pourtant correcte. Mesure ces dimensions séparément. Le choix des critères doit correspondre au service réellement attendu."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_075",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment tester une demande commerciale dont le catalogue ne contient pas le produit ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Le résultat attendu doit signaler l’absence ou proposer une alternative autorisée sans inventer un stock. Prépare des références de catalogue contrôlées. Un assistant convaincant ne doit pas créer une disponibilité fictive pour conclure la vente."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_076",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi évaluer les demandes simplement informatives dans un assistant de commande ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Elles vérifient qu’une question sur un prix ou une condition ne déclenche pas une commande. Le système doit distinguer information et engagement. Un test centré sur les seules commandes explicites ne couvre pas cette frontière."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_077",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment définir un test de cohérence entre une réponse et un état métier ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Fournis un état contrôlé, pose une demande et compare l’affirmation finale aux effets réellement confirmés. Une explication correcte ne suffit pas si elle décrit un état différent. Conserve la preuve de l’état attendu."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_078",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Un assistant qui répond toujours doit-il obtenir une meilleure note qu’un assistant qui demande parfois une précision ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Si une information indispensable manque, une clarification ciblée peut être le bon résultat. Évalue sa nécessité et son utilité. Le taux de réponse directe ne mesure pas à lui seul la qualité."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_079",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment tester les changements de décision de l’utilisateur au milieu d’un parcours ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Prépare un scénario où une préférence ou une instruction est explicitement modifiée. Vérifie que l’état actuel est pris en compte sans réutiliser aveuglément l’ancien. Le scénario doit préciser ce qui a déjà été confirmé."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_080",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi inclure des demandes hors périmètre dans l’évaluation produit ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Elles vérifient la capacité à expliquer une limite et à orienter utilement sans inventer des fonctions. Définis le comportement attendu. Un assistant spécialisé n’a pas à prétendre réaliser toutes les tâches."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_081",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment évaluer une réponse d’escalade vers un humain ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Vérifie le motif, les informations transmises et ce qui est réellement confirmé. Le système ne doit pas annoncer un contact effectué si aucune transmission n’a abouti. Une promesse d’escalade et son exécution sont distinctes."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_082",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi mesurer le coût total d’un parcours plutôt que celui du dernier appel au modèle ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Les tentatives, outils et étapes intermédiaires font partie du service rendu. Définis le périmètre de coût mesuré et les réussites associées. Un dernier appel bon marché peut appartenir à un parcours coûteux ou échoué."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_083",
+    "type": "complementary",
+    "group_id": "legacy_comp_objectifs_produit",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment vérifier qu’une personnalisation ne contredit pas une règle du service ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Prévois un cas où une préférence utilisateur entre en conflit avec une contrainte établie. Vérifie que le système explique la limite sans inventer une dérogation. La personnalisation n’est pas une autorisation générale."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_084",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Un grand nombre de calculs numériques peut-il remplacer la preuve d’un résultat pour toutes les instances ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Pas lorsqu’une preuve générale est demandée. Les calculs vérifient des cas selon leurs hypothèses et peuvent guider la recherche. Ils ne démontrent pas à eux seuls une affirmation universelle sur un ensemble d’instances non examiné."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_085",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment distinguer une conjecture proposée par IA d’un théorème démontré ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Identifie l’énoncé, les hypothèses et la démonstration vérifiable. Une formulation plausible ou des exemples favorables ne suffisent pas. Présente le statut exact et les points qui restent à établir."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_086",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi vérifier les quantificateurs d’un résultat mathématique annoncé ?"
+      },
+      {
+        "role": "assistant",
+        "content": "« Pour certains cas » et « pour tous les cas » ne disent pas la même chose. Une restriction peut être décisive pour la portée du résultat. Ne transforme pas une avancée partielle en résolution générale en supprimant ses hypothèses."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_087",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Un outil de vérification qui n’a pas été exécuté peut-il être cité comme validation obtenue ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Il faut distinguer une proposition de vérification et un résultat effectivement produit. Conserve les entrées, versions et sorties nécessaires. Le nom d’un vérificateur n’est pas une preuve que l’énoncé a passé ses contrôles."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_088",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment évaluer une démonstration qui s’appuie sur une étape admise sans preuve ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Repère l’étape et vérifie si elle fait partie des hypothèses autorisées ou du résultat à démontrer. Une conclusion conditionnelle peut être correcte sans résoudre le problème initial. Le rapport doit rendre cette dépendance visible."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_089",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi un titre d’article prometteur ne suffit-il pas à conclure à une découverte ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Il faut lire le résultat exact, ses hypothèses et les éléments de validation. Le titre peut résumer une ambition ou un cas particulier. Attribue l’annonce tant que son contenu n’a pas été vérifié."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_090",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment rapporter le rôle de l’IA dans une recherche sans effacer les contributions humaines ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Décris les tâches effectivement réalisées par les outils et celles assurées par les chercheurs. Distingue suggestion, calcul, rédaction et validation. Une attribution honnête ne se réduit pas à dire que l’IA a « tout résolu »."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_091",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que vérifier lorsqu’une annonce affirme résoudre un problème du millénaire ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Compare le résultat à l’énoncé officiel, puis examine la preuve et son statut de validation. Une simulation ou une variante d’équation peut être utile sans répondre au problème officiel. Évite de diffuser une conclusion plus forte que les éléments disponibles."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_092",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Une réponse correcte à un cas particulier suffit-elle à démontrer un algorithme polynomial ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Il faut justifier la correction dans le cadre annoncé et la borne asymptotique pertinente. Un temps court sur des exemples ne prouve pas cette borne. L’évaluation expérimentale et l’analyse de complexité ont des rôles différents."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_093",
+    "type": "complementary",
+    "group_id": "legacy_comp_lecture_scientifique",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "Clay Mathematics Institute — Navier–Stokes Equation",
+        "url": "https://www.claymath.org/millennium/navier-stokes-equation/"
+      },
+      {
+        "title": "Clay Mathematics Institute — P vs NP",
+        "url": "https://www.claymath.org/millennium/p-vs-np/"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment corriger une réponse scientifique déjà partagée lorsqu’une erreur est découverte ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Indique précisément l’affirmation retirée ou modifiée, la raison et les conclusions affectées. Conserve les parties encore soutenues par les sources. Une correction traçable est préférable à un remplacement silencieux qui laisse circuler l’ancienne conclusion."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_094",
+    "type": "complementary",
+    "group_id": "legacy_comp_cas_controles",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Le chargeur attend une ligne JSON par exemple, mais le fichier commence par « [ ». Faut-il supprimer tous les crochets dans le texte ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Non. Identifie d’abord le format attendu. Un tableau JSON et un fichier JSONL ne se lisent pas de la même façon. Si une conversion est nécessaire, sérialise chaque objet sur sa propre ligne sans modifier le contenu des chaînes ni les listes internes."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_095",
+    "type": "complementary",
+    "group_id": "legacy_comp_protocole_detail",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Faut-il calculer la réussite d’un assistant par tour ou par conversation ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Choisis l’unité qui correspond à l’objectif et annonce-la. Un tour correct peut appartenir à une conversation qui échoue au final, et l’inverse est possible selon le critère. Si les deux comptages sont utiles, rapporte-les séparément plutôt que les mélanger."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_096",
+    "type": "complementary",
+    "group_id": "legacy_comp_protocole_detail",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment maintenir un cas d’évaluation dont la bonne réponse dépend d’une date ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Fige la date de référence et les sources nécessaires, ou définis une mise à jour contrôlée. Une réponse historiquement correcte peut devenir inadaptée à une question actuelle. Le protocole doit permettre de distinguer obsolescence de la référence et erreur du système."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_097",
+    "type": "complementary",
+    "group_id": "legacy_comp_protocole_detail",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment tester qu’un changement de prénom fictif sans pertinence métier ne modifie pas une décision ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Construis une paire de cas identiques sur les critères utiles, avec seulement ce changement, puis vérifie le comportement attendu. Justifie d’abord que ce champ est sans pertinence pour la tâche. Cette paire ne remplace pas une étude complète des biais."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_098",
+    "type": "complementary",
+    "group_id": "legacy_comp_protocole_detail",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Comment traiter un critère qui ne s’applique pas à certains exemples ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Définis un état non applicable et une règle explicite pour le calcul du score. Ne le convertis pas arbitrairement en succès ou échec. Rapporte les nombres de cas concernés pour rendre l’agrégation interprétable."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_099",
+    "type": "complementary",
+    "group_id": "legacy_comp_protocole_detail",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Que tester lorsqu’une réponse ne devrait pas dépendre de l’ordre de documents équivalents ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Prépare des variantes où seul l’ordre change et vérifie l’invariance attendue. Assure-toi que les documents ne portent pas une priorité réelle ou une chronologie décisive. Une différence de sortie peut alors révéler une sensibilité à analyser."
+      }
+    ]
+  },
+  {
+    "id": "legacy_sft_100",
+    "type": "complementary",
+    "group_id": "legacy_comp_protocole_detail",
+    "source_lines": [],
+    "external_sources": [
+      {
+        "title": "OpenAI — Working with evals",
+        "url": "https://platform.openai.com/docs/guides/evals"
+      },
+      {
+        "title": "OpenAI — Getting started with datasets",
+        "url": "https://platform.openai.com/docs/guides/evaluation-getting-started"
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Pourquoi distinguer cent demandes de cent utilisateurs et cent variantes issues d’une même demande ?"
+      },
+      {
+        "role": "assistant",
+        "content": "Elles ne représentent pas la même diversité de situations. Conserve l’origine des variantes et choisis l’agrégation selon l’usage visé. Un grand nombre de paraphrases d’un seul cas ne doit pas être présenté comme une couverture indépendante équivalente."
+      }
+    ]
+  }
 ]
