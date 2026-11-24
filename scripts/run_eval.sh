@@ -2,6 +2,7 @@
 # Compare base, v2 LoRA and assistant v3 on the same assistant validation set.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+cat config/dataset_notice.txt >&2
 MLXPY=${MLXPY:-"$HOME/Library/Application Support/pipx/venvs/mlx-lm/bin/python"}
 DATA=data/training_data/pilot_v3_assistant/valid.jsonl
 V2=data/private/adapters/pilot_v2/gemma4_e2b_lora_seed0

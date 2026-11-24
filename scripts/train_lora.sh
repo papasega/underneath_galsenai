@@ -3,6 +3,7 @@
 # Requires the frozen dataset selected by the configuration.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+cat config/dataset_notice.txt >&2
 CONFIG=${CONFIG:-config/config_gemma.yml}
 # Without --iters, derive iters and per-epoch eval/save steps from `epochs`.
 if [[ " $* " != *" --iters"* ]]; then

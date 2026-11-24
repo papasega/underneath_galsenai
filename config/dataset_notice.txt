@@ -1,0 +1,1 @@
+DATASET NOTICE: data/private/supervised_fine_tuning_galsenai.json contains example data only, not the complete training or evaluation datasets. To request the complete datasets, please contact the GalsenAI community through this repository (for example, open a GitHub issue). A Hugging Face release is planned.

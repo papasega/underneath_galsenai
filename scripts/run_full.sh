@@ -8,6 +8,7 @@
 #   RAG=hybrid ./scripts/run_full.sh eval             also with retrieved passages (needs scripts/rag_contexts.py run before)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+cat config/dataset_notice.txt >&2
 MLXPY="$HOME/Library/Application Support/pipx/venvs/mlx-lm/bin/python"
 MODELS=data/private/models
 BASE=google/gemma-4-E2B-it

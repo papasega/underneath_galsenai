@@ -92,6 +92,7 @@ if __name__ == "__main__":
     ap.add_argument("--answers", action="store_true")
     ap.add_argument("--base", default="http://localhost:8080")
     a = ap.parse_args()
+    print((ROOT / "config/dataset_notice.txt").read_text().strip(), file=sys.stderr)
     res = {"retrieval": retrieval(a.k)}
     if a.answers:
         res["answers"] = answers(a.base)

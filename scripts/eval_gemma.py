@@ -40,6 +40,7 @@ def prepare_history(history, system):
 @click.option("--out", type=click.Path(dir_okay=False, path_type=Path))
 def main(name, model, adapter, data, max_new_tokens, thinking, repetition_penalty, seed,
          system_prompt_file, limit, rag_method, out):
+    click.echo((ROOT / "config/dataset_notice.txt").read_text().strip(), err=True)
     out = out or ROOT / f"results/{name}.json"
     if out.exists():
         raise click.ClickException(f"Output already exists, choose a new --out: {out}")

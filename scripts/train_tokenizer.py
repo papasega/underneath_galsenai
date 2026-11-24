@@ -8,6 +8,7 @@ import click
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+NOTICE_PATH = ROOT / "config/dataset_notice.txt"
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 from galsenai.chat import SPECIAL_TOKENS  # noqa: E402
 from galsenai.train import chat_messages  # noqa: E402
@@ -18,6 +19,7 @@ from minbpe import RegexTokenizer  # noqa: E402
 @click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path),
               default=ROOT / "config/pilotv1_config/config_nanochat.yml")
 def main(config: Path) -> None:
+    click.echo(NOTICE_PATH.read_text().strip(), err=True)
     cfg = yaml.safe_load(config.read_text())["tokenizer"]
     text = "\n".join(chat_messages(ROOT / cfg["corpus"])) if cfg.get("corpus") else ""
     for line in (ROOT / cfg["sft_train"]).read_text(encoding="utf-8").splitlines():

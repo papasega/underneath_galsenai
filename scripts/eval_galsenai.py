@@ -28,6 +28,7 @@ ap.add_argument("--data", type=Path, default=ROOT / "data/private/mlx_sft/valid.
 ap.add_argument("--max-new-tokens", type=int, default=200)
 ap.add_argument("--out", type=Path)
 a = ap.parse_args()
+print((ROOT / "config/dataset_notice.txt").read_text().strip(), file=sys.stderr)
 
 device = pick_device()
 model, tok = load_checkpoint(a.checkpoint, device).eval(), load_tokenizer(a.tokenizer)
@@ -64,6 +65,6 @@ res = {
     "samples": rows,
 }
 out = a.out or ROOT / f"results/{a.name}.json"
-out.parent.mkdir(exist_ok=True)
+out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(json.dumps(res, ensure_ascii=False, indent=2), encoding="utf-8")
 print(a.name, json.dumps(res["metrics"], indent=1))

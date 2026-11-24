@@ -25,6 +25,7 @@ def test_wrapper_respects_config_cadence_and_derives_iterations(tmp_path):
     (dataset / "train.jsonl").write_text('{}\n' * 7)
     config = tmp_path / "config"
     config.mkdir(parents=True)
+    (config / "dataset_notice.txt").write_text((ROOT / "config/dataset_notice.txt").read_text())
     cfg = config / "config_gemma.yml"
     text = f"epochs: 1\nbatch_size: 2\ndata: {dataset}\n"
     cfg.write_text(text + "steps_per_eval: 2\nsave_every: 2\n")
@@ -34,6 +35,7 @@ def test_wrapper_respects_config_cadence_and_derives_iterations(tmp_path):
         'printf "ARG:%s\\n" --config "$CONFIG" "$@"'))
     result = subprocess.run(["bash", str(wrapper)], capture_output=True, text=True, check=True)
     assert "iters=4 (4 per epoch)" in result.stdout
+    assert "example data only" in result.stderr
     assert "ARG:--steps-per-eval" not in result.stdout
     assert "ARG:--save-every" not in result.stdout
     cfg.write_text(text)
