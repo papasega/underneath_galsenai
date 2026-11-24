@@ -19,7 +19,7 @@ from minbpe import RegexTokenizer  # noqa: E402
 @click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path),
               default=ROOT / "config/pilotv1_config/config_nanochat.yml")
 def main(config: Path) -> None:
-    click.echo(NOTICE_PATH.read_text().strip(), err=True)
+    click.secho(NOTICE_PATH.read_text().strip(), fg="green", err=True)
     cfg = yaml.safe_load(config.read_text())["tokenizer"]
     text = "\n".join(chat_messages(ROOT / cfg["corpus"])) if cfg.get("corpus") else ""
     for line in (ROOT / cfg["sft_train"]).read_text(encoding="utf-8").splitlines():

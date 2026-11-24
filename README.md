@@ -180,25 +180,37 @@ a compatible inference server; the provided Gemma server uses MLX.
 ```
 WhatsApp export ──► prepare_data_galesnai.py (system lines out, phone numbers → keyed hash)
                 └─► anonymize_chat.py (random sender labels, names/links/numbers removed, dates → month)
-conversations (data/private/supervised_fine_tuning_galsenai.json, 76 Q&A conversations)
-   └─► prepare_sft_mlx.py ──► train.jsonl (68) / valid.jsonl (8)
+examples (data/private/supervised_fine_tuning_galsenai.json, 100 conversations)
+   └─► prepare_sft_mlx.py ──► train.jsonl (92) / valid.jsonl (8)
          ├─► train_lora.sh        Gemma 4 E2B + LoRA            (config/pilotv1_config/config_gemma.yml)
          └─► train_tokenizer.py → galsenai.train base → sft     (config/pilotv1_config/config_nanochat.yml)
                                   └─► run_eval.sh ──► results/local/assistant-eval-*/
                                   └─► webapp/  chat UI on any OpenAI-compatible server (vLLM, mlx_lm.server)
 ```
 
-Data format: a list of conversations, each a list of `{"role": "user" | "assistant", "content": ...}` turns.
+Data format: a JSON list of records with a `messages` list of `{"role": "user" | "assistant", "content": ...}` turns and provenance fields. See [Data access and schema](#data-access-and-schema). The converter also accepts legacy message lists.
 
 ## Install
 
 ```bash
-uv sync --extra dev          # or: pip install -e ".[dev]"
-pytest -q && ruff check . && mypy
+uv sync --locked --extra dev
+uv run --no-sync pytest -q
+uv run --no-sync ruff check src tests data/prepare_data_galesnai.py
+uv run --no-sync mypy
 ```
 
-Gemma fine-tuning and evaluation need [`mlx-lm`](https://github.com/ml-explore/mlx-lm), installed separately
-(it is not a project dependency): `uv tool install mlx-lm`.
+On Apple Silicon, use Python 3.12 or newer and install the locked MLX environment:
+
+```bash
+uv sync --locked --python 3.12 --extra dev --extra mlx
+```
+
+The `mlx` extra pins mlx-lm 0.32.2, mlx 0.32.4 and Transformers 5.24.0.
+Training, evaluation and serving use `.venv/bin/python`; set `MLXPY` to override it.
+The HF training extra requires Python 3.11 or newer. The Linux uv lock selects CPU
+PyTorch for CI. For CUDA, install a wheel matching your GPU driver with pip before
+`python -m pip install -e '.[hf-train]'`, as in the CUDA recipe above. This CUDA
+wheel selection is separate from the CPU lock; record `pip freeze` with each run.
 
 ## Fine-tune Gemma 4 E2B (LoRA)
 
@@ -206,7 +218,7 @@ All hyper-parameters, including the number of **epochs**, are in `config/pilotv1
 into `--iters` (mlx-lm only knows iterations) and evaluates and saves once per epoch.
 
 ```bash
-python3 scripts/prepare_sft_mlx.py      # fixed split: 68 train / 8 valid
+python3 scripts/prepare_sft_mlx.py      # example split: 92 train / 8 valid; choose --output if the directory already exists
 CONFIG=config/pilotv1_config/config_gemma.yml ./scripts/train_lora.sh
 ```
 
@@ -269,7 +281,7 @@ Each invocation prints its new `results/local/assistant-eval-*/` directory. It c
 `base.json`, `v2.json`, `v3.json`, `comparison.md` and `review.csv` for side-by-side manual
 review. Results include data/prompt/adapter hashes, truncation and narrative marker rates.
 Existing outputs are never overwritten. `MLXPY` can select the Python environment containing
-mlx-lm (default: the local pipx installation). Close the webchat model server before running
+mlx-lm (default: `.venv/bin/python`). Close the webchat model server before running
 the comparison to free memory. These are development results, not a clean final test.
 ROUGE/F1 measure word overlap; narrative markers are review flags, not correctness judgments.
 
@@ -338,6 +350,10 @@ panel listing the group's themes; a click sends a natural question to the model)
 
 The default model is `google/gemma-4-E2B-it`, with the MLX LoRA adapter
 `data/private/adapters/pilot_v4_assistant/google_gemma4_rank8_run1` (step 799).
+**The trained adapter weights are not included in Git. They will be published on
+Hugging Face by the maintainer; no download URL is available yet.** Until then,
+request the adapter or train it locally. Place `adapter_config.json` and
+`adapters.safetensors` in the directory above before starting the default server.
 Set `MODEL` and `ADAPTER` together to serve a different model/adapter pair;
 the active model and adapter directory are shown in the UI. To return to QAT:
 
@@ -361,7 +377,7 @@ VLLM_BASE_URL=http://HOST:8000/v1 .venv/bin/python webapp/server.py
 With `mlx_lm.server` the request model name must be `default_model` to use the preloaded model and its adapter (`serve.sh`
 sets it and passes the real name to the UI via `ACTIVE_MODEL`); any other name loads that model without the adapter.
 
-Optional environment variables: `MODEL`, `SYSTEM_PROMPT`, `API_KEY`. Standard library only.
+Optional environment variables: `MODEL`, `MODEL_REVISION` (immutable SHA for a custom Hub model), `MLXPY`, `SYSTEM_PROMPT`, `API_KEY`. Standard library only.
 
 ## Report
 
@@ -419,7 +435,7 @@ python data/prepare_data_galesnai.py             # backup, filter, pseudonymize
 
 ## Roadmap
 
-1. Pick the Gemma epoch count on a larger validation set, and add more conversations (76 is small).
+1. Pick the Gemma epoch count on a larger validation set, and add more conversations (the public 100-example file is only a sample).
 2. Export: weight quantization (int8/int4), then LiteRT or GGUF, with an accuracy check against the PyTorch model.
 3. Measure on-device memory and tokens/second on a real phone.
 
@@ -495,3 +511,41 @@ out of Git. The `.gitignore` explicitly permits the public dataset and preparati
 files. Do not run the previously suggested `git rm --cached` on the public dataset.
 New top-level evaluation JSON files are ignored except `results/assistant_v4_summary.json`
 and `results/chat_stats.json`. Ignore rules do not remove already tracked files.
+
+## Reproducing the experiments
+
+A Git clone contains code and 100 public example conversations, not the complete
+training snapshots, human corrections or trained adapters. Request the complete
+inputs from the GalsenAI community through a GitHub issue. Dataset and adapter
+releases on Hugging Face are planned. The public example converter demonstrates
+the format; it cannot recreate the reported v4 experiments.
+
+For a private handoff, create an archive of the frozen snapshots, generated sources,
+review corrections and detailed evaluation outputs, excluding weights:
+
+```bash
+uv run --no-sync python scripts/archive_reproduction.py --output data/backups/reproduction_v1
+```
+
+The command refuses an existing destination. Keep both `inputs.tar.gz` and
+`manifest.json` in durable private storage outside this machine. The manifest lists
+SHA-256 hashes for every archived file and the archive itself. Restore the
+repository-relative archive paths into the matching checkout, without replacing
+newer work. Preserve each snapshot's own `manifest.json`; do not regenerate frozen
+splits from subsequently corrected source files. Model weights must be stored and
+released separately. Record the Git commit (`git rev-parse HEAD`) with the archive.
+
+`config/model_revisions.json` pins the Google and QAT Hub commits captured from the
+local cache at project closure. The MLX training/server/fuse launcher downloads
+those snapshots before invoking MLX, whose CLIs do not expose `--revision`.
+MLX evaluation and HF training use the same pins. For another Hub model, supply
+`--revision` with its 40-character commit SHA. Local model directories remain
+supported, and must be archived separately. Access to gated Google weights may
+require accepting the model license and authenticating with `hf auth login`.
+
+New training runs record model revision, data hashes and dependency versions in
+`training_provenance.json`; evaluations record the model revision in their settings.
+Historical runs did not capture all versions or model revisions, so these closure
+pins cannot establish their exact historical environment. Existing aggregate
+results remain historical observations. Fixed seeds and identical inputs do not
+guarantee bit-for-bit agreement across MLX, CUDA and CPU hardware.

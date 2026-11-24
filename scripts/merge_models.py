@@ -4,7 +4,7 @@ Why: full fine-tuning on ~3k messages moves the weights toward the group's style
 toward the base (model soups / WiSE-FT) usually keeps most of the style with less forgetting. w is the share of the
 fine-tuned model: 40 -> 40 % full + 60 % base. Only tensors that differ are interpolated (top layers when num_layers < all).
 Run with the mlx-lm interpreter:
-    "$HOME/Library/Application Support/pipx/venvs/mlx-lm/bin/python" scripts/merge_models.py --full data/private/models/gemma4-full-ft --weights 20 40 60 80
+    .venv/bin/python scripts/merge_models.py --full data/private/models/gemma4-full-ft --weights 20 40 60 80
 Output: data/private/models/gemma4-full-merge-w<w>/ (the webapp lists every gemma4-full-* directory).
 """
 

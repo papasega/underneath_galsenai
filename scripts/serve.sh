@@ -5,9 +5,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODEL=${MODEL:-google/gemma-4-E2B-it}
+MLXPY=${MLXPY:-.venv/bin/python}
 ADAPTER=${ADAPTER:-data/private/adapters/pilot_v4_assistant/google_gemma4_rank8_run1}
 IPORT=${IPORT:-8001}; WPORT=${WPORT:-8080}
 args=(--model "$MODEL" --port "$IPORT")
+if [ -n "${MODEL_REVISION:-}" ]; then args+=(--revision "$MODEL_REVISION"); fi
 label="$MODEL"
 if [ "$ADAPTER" != "none" ]; then
   for f in adapter_config.json adapters.safetensors; do
@@ -16,7 +18,7 @@ if [ "$ADAPTER" != "none" ]; then
   args+=(--adapter-path "$ADAPTER")
   label="$MODEL + LoRA ($(basename "$ADAPTER"))"
 fi
-~/.local/bin/mlx_lm.server "${args[@]}" >/tmp/galsenai_mlx_server.log 2>&1 &
+"$MLXPY" scripts/mlx_entry.py server "${args[@]}" >/tmp/galsenai_mlx_server.log 2>&1 &
 INFER=$!
 trap 'kill $INFER 2>/dev/null; wait $INFER 2>/dev/null || true; echo "Serveurs arrêtés."' EXIT
 trap 'exit 0' INT TERM

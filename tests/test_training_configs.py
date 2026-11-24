@@ -1,5 +1,7 @@
 """Check dataset isolation and wrapper scheduling without launching MLX training."""
 
+import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -33,17 +35,30 @@ def test_wrapper_respects_config_cadence_and_derives_iterations(tmp_path):
     wrapper.write_text(
         (ROOT / "scripts/train_lora.sh")
         .read_text()
-        .replace('~/.local/bin/mlx_lm.lora --config "$CONFIG" "$@"', 'printf "ARG:%s\\n" --config "$CONFIG" "$@"')
+        .replace(
+            '"$MLXPY" scripts/mlx_entry.py lora --config "$CONFIG" "$@"', 'printf "ARG:%s\\n" --config "$CONFIG" "$@"'
+        )
     )
-    result = subprocess.run(["bash", str(wrapper)], capture_output=True, text=True, check=True)
+    # Reproduce the runner without ripgrep: the wrapper only needs standard tools.
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for command in ("bash", "dirname", "cat", "grep", "python3"):
+        (bin_dir / command).symlink_to(shutil.which(command))
+    env = {**os.environ, "PATH": str(bin_dir)}
+    result = subprocess.run(["bash", str(wrapper)], env=env, capture_output=True, text=True, check=True)
     assert "iters=4 (4 per epoch)" in result.stdout
     assert "example data only" in result.stderr
+    assert "\x1b[32m" in result.stderr
     assert "ARG:--steps-per-eval" not in result.stdout
     assert "ARG:--save-every" not in result.stdout
     cfg.write_text(text)
     result = subprocess.run(["bash", str(wrapper)], capture_output=True, text=True, check=True)
     assert "ARG:--steps-per-eval\nARG:4" in result.stdout
     assert "ARG:--save-every\nARG:4" in result.stdout
+    result = subprocess.run(["bash", str(wrapper), "--batch-size", "1"], capture_output=True, text=True, check=True)
+    assert "iters=7 (7 per epoch)" in result.stdout
+    result = subprocess.run(["bash", str(wrapper), "--iters=3"], capture_output=True, text=True, check=True)
+    assert "epochs from config" not in result.stdout
 
 
 def test_v2_full_and_nanochat_isolate_data_and_outputs():

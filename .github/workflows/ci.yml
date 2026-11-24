@@ -17,10 +17,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      - run: uv lock --check
       - name: Install (CPU torch)
         run: |
-          uv venv --python ${{ matrix.python-version }}
-          uv pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[dev]"
+          uv sync --locked --python ${{ matrix.python-version }} --extra dev
       - run: uv run --no-sync ruff check src tests data/prepare_data_galesnai.py
       - run: uv run --no-sync ruff format --check src tests data/prepare_data_galesnai.py
       - run: uv run --no-sync mypy

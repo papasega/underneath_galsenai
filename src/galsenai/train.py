@@ -187,7 +187,7 @@ def train_sft(cfg: Cfg, tok: RegexTokenizer, device: str) -> None:
 @click.option("--stage", type=click.Choice(["base", "sft"]), required=True)
 @click.option("--set", "overrides", multiple=True, help="Repeat for each override, e.g. --set sft.epochs=3")
 def main(config: Path, stage: str, overrides: tuple[str, ...]) -> int:
-    click.echo(NOTICE_PATH.read_text().strip(), err=True)
+    click.secho(NOTICE_PATH.read_text().strip(), fg="green", err=True)
     cfg = yaml.safe_load(config.read_text())
     for item in overrides:
         key, value = item.split("=", 1)

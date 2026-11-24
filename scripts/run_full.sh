@@ -8,8 +8,8 @@
 #   RAG=hybrid ./scripts/run_full.sh eval             also with retrieved passages (needs scripts/rag_contexts.py run before)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-cat config/dataset_notice.txt >&2
-MLXPY="$HOME/Library/Application Support/pipx/venvs/mlx-lm/bin/python"
+printf '\033[32m%s\033[0m\n' "$(cat config/dataset_notice.txt)" >&2
+MLXPY=${MLXPY:-.venv/bin/python}
 MODELS=data/private/models
 BASE=google/gemma-4-E2B-it
 cmd=${1:-}; shift || true
@@ -21,7 +21,7 @@ case "$cmd" in
     cp "$SRC/$(printf %07d "$1")_adapters.safetensors" "$DST/adapters.safetensors"; echo "$DST" ;;
   fuse)
     ADAPTER=${1:-data/private/adapters/gemma4_e2b_full}
-    ~/.local/bin/mlx_lm.fuse --model "$BASE" --adapter-path "$ADAPTER" --save-path "$MODELS/gemma4-full-${2:-ft}" ;;
+    "$MLXPY" scripts/mlx_entry.py fuse --model "$BASE" --adapter-path "$ADAPTER" --save-path "$MODELS/gemma4-full-${2:-ft}" ;;
   merge) "$MLXPY" -W ignore scripts/merge_models.py --full "$MODELS/gemma4-full-${FULL:-ft}" ${*:+--weights "$@"} ;;
   eval)
     # bf16 base: the fair reference, since the full models are bf16 and the other base row is 4-bit QAT

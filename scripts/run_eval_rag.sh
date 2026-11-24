@@ -3,8 +3,8 @@
 # Needs scripts/rag_contexts.py first (project venv), then the mlx-lm interpreter for generation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-cat config/dataset_notice.txt >&2
-MLXPY="$HOME/Library/Application Support/pipx/venvs/mlx-lm/bin/python"
+printf '\033[32m%s\033[0m\n' "$(cat config/dataset_notice.txt)" >&2
+MLXPY=${MLXPY:-.venv/bin/python}
 A=data/private/adapters
 .venv/bin/python -W ignore scripts/rag_contexts.py --sweep
 for m in bm25 dense hybrid oracle; do

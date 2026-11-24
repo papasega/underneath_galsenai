@@ -129,7 +129,7 @@ v2. Token lengths, truncation and memory need measurement before the actual runs
 | Pilot v1 | 356 input candidates, 204 train / 48 valid / 28 test after filtering and quarantine | Frozen splits local; public `collection.json` describes historical inputs |
 | Pilot v2 | 1,600 candidates in 16 batches; 1,266 train / 167 valid / 167 test | Source batches and frozen splits local; collection and aggregate summary public |
 | Assistant v3 | Filtered v2: 799 train including six explicit seeds, 114 valid; context-dependent targets excluded | Seeds public; full snapshot local |
-| Assistant v4 | Same rows and split membership as v3, with eight training answers replaced from review corrections | Local; selected LoRA checkpoint is step 400 |
+| Assistant v4 | Same rows and split membership as v3, with eight training answers replaced from review corrections | Local; QAT reference is step 400, Google server adapter is step 799 |
 
 The six public JSON fields are `id`, `type`, `group_id`, `source_lines`,
 `external_sources` and `messages`. Each message has `role` and `content`. Source
