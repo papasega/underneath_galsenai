@@ -9,6 +9,7 @@ __pycache__/
 # macOS
 .DS_Store
 .claude/
+.codex/
 
 # Frozen course material and superseded code, kept locally only
 legacy/
