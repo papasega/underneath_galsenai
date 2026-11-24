@@ -47,12 +47,15 @@ def test_assistant_snapshot_filters_whole_rows_and_preserves_splits(tmp_path):
     assert before
 
 
-def test_webchat_uses_training_system_and_disables_thinking(monkeypatch):
+@pytest.mark.parametrize("which", ["gemma", "google"])
+def test_webchat_uses_training_system_and_disables_thinking(monkeypatch, which):
     from webapp import server
 
     captured = {}
 
-    def upstream(path, body):
+    def upstream(path, body, *, google=False):
+        assert path == "/chat/completions"
+        assert google == (which == "google")
         captured.update(body)
         return io.BytesIO(b"")
 
@@ -62,7 +65,7 @@ def test_webchat_uses_training_system_and_disables_thinking(monkeypatch):
     handler = server.Handler.__new__(server.Handler)
     handler.wfile = io.BytesIO()
     monkeypatch.setattr(handler, "_sse_start", lambda: None)
-    handler._gemma([{"role": "user", "content": "Bonjour"}], 512, 0)
+    handler._gemma([{"role": "user", "content": "Bonjour"}], 512, 0, which=which)
     assert captured["messages"][0] == {"role": "system", "content": server.DEFAULT_SYSTEM}
     assert captured["chat_template_kwargs"] == {"enable_thinking": False}
     assert captured["model"] == "default_model"
@@ -82,5 +85,7 @@ def test_serve_rejects_missing_selected_adapter_before_starting_server(tmp_path)
     assert result.returncode == 1
     assert "Missing adapter file" in result.stderr
     script = (root / "scripts/serve.sh").read_text()
-    assert "MODEL=${MODEL:-google/gemma-4-E2B-it}" in script
-    assert "pilot_v4_assistant/google_gemma4_rank8_run1" in script
+    assert "MODEL=${MODEL:-mlx-community/gemma-4-E2B-it-qat-4bit}" in script
+    assert "ADAPTER=${ADAPTER:-data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0}" in script
+    assert "GOOGLE_MODEL=google/gemma-4-E2B-it" in script
+    assert "GOOGLE_ADAPTER=data/private/adapters/pilot_v4_assistant/google_gemma4_rank8_run1" in script
