@@ -100,20 +100,33 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 # First install the PyTorch build matching your CUDA driver using the selector linked below.
 python -m pip install -e '.[hf-train]'
-python -c 'import torch; print(torch.__version__, torch.cuda.is_available())'
+nvidia-smi
+python -c 'import torch; print("CUDA:", torch.cuda.is_available())'
 hf auth login  # if model access requires authentication; accept its license on Hugging Face first
 
-# Requires the complete local train.jsonl and valid.jsonl snapshot, not the public example JSON.
+# Short end-to-end check. Requires the complete local train.jsonl and valid.jsonl snapshot.
 CUDA_VISIBLE_DEVICES=0 python scripts/train_lora_hf.py \
-  --device cuda --data data/training_data/pilot_v4_assistant \
-  --output data/private/adapters/hf/pilot_v4_run1
+  --model google/gemma-4-E2B-it \
+  --device cuda \
+  --data data/training_data/pilot_v4_assistant \
+  --max-steps 1 \
+  --output data/private/adapters/hf/gemma4_v4_smoke1
 
-# Short end-to-end check. Always choose a new output directory for each run.
+# One epoch. Always choose a new output directory for each run.
 CUDA_VISIBLE_DEVICES=0 python scripts/train_lora_hf.py \
-  --device cuda --max-steps 1 \
-  --output data/private/adapters/hf/pilot_v4_smoke1
+  --model google/gemma-4-E2B-it \
+  --device cuda \
+  --data data/training_data/pilot_v4_assistant \
+  --epochs 1 \
+  --batch-size 1 \
+  --gradient-accumulation 2 \
+  --learning-rate 5e-5 \
+  --rank 8 \
+  --max-length 2048 \
+  --output data/private/adapters/hf/gemma4_v4_run1
 ```
 
+These CUDA commands require an NVIDIA GPU; they do not run on a Mac GPU.
 Choose the CUDA or CPU wheel with the official [PyTorch installation selector](https://pytorch.org/get-started/locally/).
 Without an NVIDIA GPU, pass `--device cpu`; this uses float32 and is very slow for Gemma.
 `--device auto` selects CUDA when available, otherwise CPU. CUDA uses bfloat16 when
