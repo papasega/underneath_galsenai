@@ -245,3 +245,6 @@ data/training_data/*
 results/*.json
 !results/assistant_v4_summary.json
 !results/chat_stats.json
+
+# Local reference documentation for future paper writing
+/README.md.back
