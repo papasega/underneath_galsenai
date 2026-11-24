@@ -1,6 +1,9 @@
 # Assistant v4 experiment results
 
-Selected for local inference: **Gemma 4 E2B QAT 4-bit + v4 LoRA, step 400**.
+Follow-up: [Google weights vs QAT 4-bit](google_vs_qat.md).
+
+Historical selection for local inference: **Gemma 4 E2B QAT 4-bit + v4 LoRA, step 400**.
+The webchat now defaults to Google + v4 step 799 for local testing, following user selection.
 This selection closes the current local experiment cycle; it is not an independent quality certification.
 
 ## Matched evaluation

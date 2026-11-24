@@ -21,12 +21,14 @@ Current assistant training uses the versioned snapshot below.
 
 ## Selected inference model
 
-The current local inference model is **Gemma 4 E2B QAT 4-bit + v4 LoRA, step 400**.
+The current local inference model is **Google Gemma 4 E2B IT + v4 LoRA, step 799**,
+selected for local testing. This choice does not establish superiority over QAT;
+see [Google vs QAT results](results/google_vs_qat.md).
 Start the inference server and webchat with `./scripts/serve.sh`, then open
 http://127.0.0.1:8080. The inference API listens on port 8001. Ctrl-C stops both.
 The adapter must already be available locally; weights and private snapshots are not in Git.
 
-The matched 114-question comparison gives v4 step 400 BPB **0.6939**, ROUGE-L **0.1765**
+The earlier matched 114-question QAT comparison gives v4 step 400 BPB **0.6939**, ROUGE-L **0.1765**
 and token F1 **0.2777**, versus v3 **0.6950 / 0.1662 / 0.2731**. V4 has one narrative
 flag and no truncated answers. These are modest development gains, not proof of factual
 superiority. See [the experiment report](results/assistant_v4_compare.md) and
@@ -74,7 +76,7 @@ questions used to create the seeds are now training examples, not evaluation ite
 Validation loss on this filtered split is not directly comparable to v2 loss.
 `scripts/run_eval.sh` still compares base/v2/v3 on assistant validation (commands below);
 it does not evaluate v4. The completed v3/v4 checkpoint comparison is documented in
-`results/assistant_v4_compare.md`. The webchat now loads v4 step 400 by default.
+`results/assistant_v4_compare.md`. The webchat now loads Google + v4 step 799 by default.
 Other historical evaluation wrappers still use v1 defaults. Do not start another run in the same output directory if its
 adapters must be retained; choose a separate `--adapter-path`.
 See `data/training_data/PILOT_V2.md` for the data protocol. All three original training
@@ -334,8 +336,17 @@ their results go to `results/local/` and `results/eval_compare.md`.
 panel listing the group's themes; a click sends a natural question to the model) with a model picker (`galsenai-gemma`: any OpenAI-compatible server; `galsenai-nanochat`: the 12M checkpoint, generated in-process) and ChatGPT-style rendered Markdown answers. vLLM needs a GPU machine; on the Mac
 `./scripts/serve.sh` starts `mlx_lm.server` with the selected LoRA adapter and the web app together (Ctrl-C stops both):
 
-The default adapter is `data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0`.
-Set `ADAPTER` to serve a different checkpoint; the active adapter directory is shown in the UI.
+The default model is `google/gemma-4-E2B-it`, with the MLX LoRA adapter
+`data/private/adapters/pilot_v4_assistant/google_gemma4_rank8_run1` (step 799).
+Set `MODEL` and `ADAPTER` together to serve a different model/adapter pair;
+the active model and adapter directory are shown in the UI. To return to QAT:
+
+```bash
+MODEL=mlx-community/gemma-4-E2B-it-qat-4bit \
+ADAPTER=data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0 \
+./scripts/serve.sh
+```
+
 The script exits if adapter files are missing. Use `ADAPTER=none ./scripts/serve.sh`
 when you explicitly want the base model. Thinking is disabled in webchat requests;
 the UI temperature remains configurable, while evaluations used temperature 0.

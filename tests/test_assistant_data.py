@@ -81,4 +81,6 @@ def test_serve_rejects_missing_selected_adapter_before_starting_server(tmp_path)
     )
     assert result.returncode == 1
     assert "Missing adapter file" in result.stderr
-    assert "pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0" in (root / "scripts/serve.sh").read_text()
+    script = (root / "scripts/serve.sh").read_text()
+    assert "MODEL=${MODEL:-google/gemma-4-E2B-it}" in script
+    assert "pilot_v4_assistant/google_gemma4_rank8_run1" in script
