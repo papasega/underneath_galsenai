@@ -73,6 +73,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--sweep", action="store_true")
     a = ap.parse_args()
+    print((ROOT / "config/dataset_notice.txt").read_text().strip(), file=sys.stderr)
     turns = assistant_turns(ROOT / "data/private/mlx_sft/valid.jsonl")
     out = ROOT / "results/local"
     out.mkdir(parents=True, exist_ok=True)

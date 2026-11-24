@@ -1,0 +1,93 @@
+{
+  "status": "selected_for_local_inference_not_independent_test_validation",
+  "selected_model": "gemma-v4-step400",
+  "selection_reason": "Best aggregate BPB, ROUGE-L and token F1 among the three evaluated candidates; user selected for local experiments.",
+  "settings": {
+    "data_sha256": "391548827c036c5b185cf882b1d93d419cf6468e7659bd114eec05845dd260a2",
+    "model": "mlx-community/gemma-4-E2B-it-qat-4bit",
+    "max_new_tokens": 512,
+    "thinking": false,
+    "temperature": 0,
+    "repetition_penalty": 1.1,
+    "seed": 0,
+    "limit": null,
+    "rag_method": null,
+    "system_sha256": "aa85640348dda064008d7cb7b6e3d963b0ed5815472692a1b93eeca625560f14"
+  },
+  "dataset": "pilot_v4_assistant/valid.jsonl (identical to v3 validation)",
+  "data_manifest_sha256": "5160ff39aac4c646de19683b214faa111a5487cf41a667fd1e1ae16cff650e75",
+  "training_config_sha256": "283b80bd25cfec6f1cd6c15314410c45b2b1287b6f2c67a8eacad777c224e98d",
+  "system_prompt_sha256": "544ccb9b2cc663fa626ec9774b224521948f7ad398b74ea661c84d2dbb97ab62",
+  "comparisons": [
+    {
+      "name": "gemma-v3",
+      "metrics": {
+        "n_turns": 114,
+        "bits_per_byte": 0.6949571460081121,
+        "nll_per_token": 2.2567792532623328,
+        "perplexity": 9.552274113971702,
+        "rouge_l": 0.16615364730191837,
+        "token_f1": 0.2730624392843786,
+        "distinct_2": 0.9891038323495751,
+        "length_ratio": 1.0901242309099641,
+        "empty_rate": 0.0,
+        "truncated_rate": 0.0,
+        "narrative_marker_rate": 0.0
+      },
+      "adapter_sha256": {
+        "adapter_config.json": "162471325e362e5c534e70825255ae07789ce4e38ec1bd260f358f3ed7442c58",
+        "adapters.safetensors": "89f2b9e7876a1f3f5d42a1099c510c04cc33ebdb878023ada3464db0d4f5b245"
+      },
+      "local_result_sha256": "dd44aa555bcec54fa19a46014e9582d5ab89696d4ed53894830c5608ba3fcd3d"
+    },
+    {
+      "name": "gemma-v4-step200",
+      "metrics": {
+        "n_turns": 114,
+        "bits_per_byte": 0.7190111676140037,
+        "nll_per_token": 2.3348914321636007,
+        "perplexity": 10.328338543128169,
+        "rouge_l": 0.16413206297327196,
+        "token_f1": 0.26955930527819044,
+        "distinct_2": 0.991159090735192,
+        "length_ratio": 1.0550508173737798,
+        "empty_rate": 0.0,
+        "truncated_rate": 0.0,
+        "narrative_marker_rate": 0.008771929824561403
+      },
+      "adapter_sha256": {
+        "adapter_config.json": "fe889b567590f037030b54f5b463f67b5e14b7154e6b3391a91ffde07f530cbe",
+        "adapters.safetensors": "63a9059906135d6abcd1eeaf0c78383845fae02ae7233103102e69dfb9ce94f2"
+      },
+      "local_result_sha256": "989d21c2f3e5438d82100538ab9a698910886da9cb0705a0de09bad7609839f0"
+    },
+    {
+      "name": "gemma-v4-step400",
+      "metrics": {
+        "n_turns": 114,
+        "bits_per_byte": 0.6938994837115214,
+        "nll_per_token": 2.2533446381330196,
+        "perplexity": 9.519522006419468,
+        "rouge_l": 0.1765070124167998,
+        "token_f1": 0.27772561868444023,
+        "distinct_2": 0.9844407358845795,
+        "length_ratio": 1.0664331021967697,
+        "empty_rate": 0.0,
+        "truncated_rate": 0.0,
+        "narrative_marker_rate": 0.008771929824561403
+      },
+      "adapter_sha256": {
+        "adapter_config.json": "fe889b567590f037030b54f5b463f67b5e14b7154e6b3391a91ffde07f530cbe",
+        "adapters.safetensors": "14a1a38a559e6f347ed75251549b6f6af5b153776e31a313e324f63be61ce312"
+      },
+      "local_result_sha256": "930b23644340b12cb2fc02291b24d240c5a3c5f09e68abb1b4dae051424e4187"
+    }
+  ],
+  "limitations": [
+    "114 development turns; corrections informed by prior validation review.",
+    "Single training seed; no significance test or independent final test.",
+    "One narrative marker detected in v4 (both checkpoints); zero in v3.",
+    "No factual review of the full v4 generations and no RAG evaluation.",
+    "Eight v3 training targets replaced; no review answers added to training."
+  ]
+}

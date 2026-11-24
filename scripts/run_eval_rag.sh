@@ -3,6 +3,7 @@
 # Needs scripts/rag_contexts.py first (project venv), then the mlx-lm interpreter for generation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+cat config/dataset_notice.txt >&2
 MLXPY="$HOME/Library/Application Support/pipx/venvs/mlx-lm/bin/python"
 A=data/private/adapters
 .venv/bin/python -W ignore scripts/rag_contexts.py --sweep

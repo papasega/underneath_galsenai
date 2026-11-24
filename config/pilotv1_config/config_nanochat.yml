@@ -1,7 +1,7 @@
 # nanochat-style pipeline on galsenai: tokenizer -> base (next-token on chat text) -> SFT (assistant tokens only).
-#   python3 scripts/train_tokenizer.py --config config_nanochat.yml
-#   python -m galsenai.train --config config_nanochat.yml --stage base
-#   python -m galsenai.train --config config_nanochat.yml --stage sft
+#   python3 scripts/train_tokenizer.py --config config/pilotv1_config/config_nanochat.yml
+#   python -m galsenai.train --config config/pilotv1_config/config_nanochat.yml --stage base
+#   python -m galsenai.train --config config/pilotv1_config/config_nanochat.yml --stage sft
 # Epochs are explicit: steps = epochs * ceil(n_examples / batch_size) (base: one epoch = one pass over the tokens).
 tokenizer:
   corpus: data/private/chat_anonymized.txt     # from scripts/anonymize_chat.py

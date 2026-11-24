@@ -1,0 +1,19 @@
+# Pilot v2: full weight updates on the top 16 blocks, not all model parameters.
+# Run: CONFIG=config/config_gemma_full.yml ./scripts/train_lora.sh
+# One epoch = ceil(1266 / 2) = 633 iterations. Select checkpoints on validation only.
+epochs: 1
+model: google/gemma-4-E2B-it
+train: true
+data: data/training_data/pilot_v2
+adapter_path: data/private/adapters/pilot_v2/gemma4_e2b_full_seed0
+fine_tune_type: full
+optimizer: adafactor
+mask_prompt: true
+seed: 0
+batch_size: 2
+learning_rate: 2.0e-5
+max_seq_length: 2048
+num_layers: 16
+grad_checkpoint: true
+steps_per_eval: 50
+save_every: 50

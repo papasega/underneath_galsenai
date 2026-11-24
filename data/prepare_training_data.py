@@ -1,12 +1,14 @@
-"""Build an immutable, source-grouped SFT pilot snapshot using only the standard library."""
+"""Build an immutable, source-grouped SFT pilot snapshot."""
 
-import argparse
 import hashlib
 import json
+import math
 import re
 import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
+
+import click
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,6 +23,54 @@ def encode(value):
 
 def normalize(text):
     return " ".join(re.findall(r"\w+", unicodedata.normalize("NFKC", text).casefold()))
+
+
+def split_ratios(config):
+    ratios = config.get("split_ratios", {"train": 0.7, "valid": 0.15, "test": 0.15})
+    if (set(ratios) != {"train", "valid", "test"}
+            or any(type(v) not in (int, float) or not math.isfinite(v) or not 0 < v < 1 for v in ratios.values())
+            or not math.isclose(sum(ratios.values()), 1)):
+        raise ValueError("Split ratios must be positive train/valid/test proportions summing to one")
+    return ratios
+
+
+def allocate_groups(groups, config):
+    """Greedily balance conversation and theme counts while keeping source components intact."""
+    ratios = split_ratios(config)
+    method = config.get("split_method", "hash_grouped")
+    if method == "hash_grouped":
+        assignments = {}
+        for component, _ in groups:
+            bucket = int(digest(f'{config["seed"]}:{component}'.encode())[:16], 16) / 2**64
+            assignments[component] = ("train" if bucket < ratios["train"] else
+                                      "valid" if bucket < ratios["train"] + ratios["valid"] else "test")
+        return assignments
+    if method != "balanced_grouped":
+        raise ValueError(f"Unknown split method: {method}")
+    totals = Counter(row["theme"] for _, members in groups for row in members)
+    total = sum(totals.values())
+    counts = Counter()
+    themes = {split: Counter() for split in ratios}
+    assignments = {}
+    ordered = sorted(groups, key=lambda group: (
+        -len(group[1]), digest(f'{config["seed"]}:{group[0]}'.encode())))
+    for component, members in ordered:
+        sizes = Counter(row["theme"] for row in members)
+
+        def cost(split, members=members, sizes=sizes, component=component):
+            target = total * ratios[split]
+            delta = ((counts[split] + len(members) - target) ** 2 - (counts[split] - target) ** 2) / target
+            for theme, size in sizes.items():
+                target = totals[theme] * ratios[split]
+                before = themes[split][theme] - target
+                delta += ((before + size) ** 2 - before ** 2) / target
+            return delta, digest(f'{config["seed"]}:{component}:{split}'.encode())
+
+        split = min(ratios, key=cost)
+        assignments[component] = split
+        counts[split] += len(members)
+        themes[split].update(sizes)
+    return assignments
 
 
 def source_keys(row, default_source):
@@ -43,10 +93,17 @@ def source_keys(row, default_source):
     return keys
 
 
-def prepare(config, root):
+def prepare(config, root, source_dir=None):
+    split_ratios(config)
     rows, quarantine, inputs = [], [], {}
     for source in config["sources"]:
-        path = root / source["path"]
+        source_path = Path(source["path"])
+        if source_path.parts[:1] == ("..",):
+            if len(source_path.parts) != 2 or source_dir is None:
+                raise ValueError("Sources named ../file.json require --source-dir (or GALSENAI_SOURCE_DIR)")
+            path = source_dir / source_path.name
+        else:
+            path = root / source_path
         raw = path.read_bytes()
         inputs[source["path"]] = digest(raw)
         data = json.loads(raw)
@@ -124,25 +181,26 @@ def prepare(config, root):
         components[find(i)].append(row)
     duplicate_ids = {r["uid"] for r in duplicates}
     splits = {name: [] for name in ("train", "valid", "test")}
+    groups = []
     for members in components.values():
         component = digest("\n".join(r["uid"] for r in members).encode())
-        bucket = int(digest(f'{config["seed"]}:{component}'.encode())[:16], 16) / 2**64
-        split = "train" if bucket < 0.70 else "valid" if bucket < 0.85 else "test"
         for row in members:
             row.pop("_refs")
             row["component_id"] = component
-            if row["uid"] not in duplicate_ids:
-                splits[split].append(row)
+        groups.append((component, [row for row in members if row["uid"] not in duplicate_ids]))
+    assignments = allocate_groups(groups, config)
+    for component, members in groups:
+        splits[assignments[component]].extend(members)
     for part in splits.values():
         part.sort(key=lambda r: r["uid"])
     return splits, {"input_sha256": inputs, "quarantine": quarantine, "duplicates": duplicates,
                     "near_duplicate_pairs": near_pairs, "component_count": len(components)}
 
 
-def build(config_path, output, root=ROOT):
+def build(config_path, output, root=ROOT, source_dir=None):
     config_raw = config_path.read_bytes()
     config = json.loads(config_raw)
-    splits, audit = prepare(config, root)
+    splits, audit = prepare(config, root, source_dir)
     files = {}
     for name, rows in splits.items():
         files[f"{name}.jsonl"] = b"".join(
@@ -153,7 +211,8 @@ def build(config_path, output, root=ROOT):
     files["collection.json"] = config_raw
     manifest = {
         "status": "frozen_pilot_not_human_validated", "seed": config["seed"],
-        "target_ratios": {"train": 0.7, "valid": 0.15, "test": 0.15},
+        "target_ratios": split_ratios(config),
+        "split_method": config.get("split_method", "hash_grouped"),
         "script_sha256": digest(Path(__file__).read_bytes()),
         "config_sha256": digest(config_raw), "input_sha256": audit["input_sha256"],
         "counts": {name: len(rows) for name, rows in splits.items()},
@@ -178,12 +237,19 @@ def build(config_path, output, root=ROOT):
     return manifest
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=ROOT / "data/training_data/collection.json")
-    parser.add_argument("--output", type=Path, default=ROOT / "data/training_data/pilot_v1")
-    args = parser.parse_args()
+@click.command(help=__doc__)
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path),
+              default=ROOT / "data/training_data/collection.json", show_default=True)
+@click.option("--output", type=click.Path(file_okay=False, path_type=Path),
+              default=ROOT / "data/training_data/pilot_v1", show_default=True)
+@click.option("--source-dir", type=click.Path(exists=True, file_okay=False, path_type=Path),
+              envvar="GALSENAI_SOURCE_DIR", help="Directory containing sources named ../file.json.")
+def main(config, output, source_dir):
     try:
-        build(args.config, args.output)
+        build(config, output, source_dir=source_dir)
     except (ValueError, KeyError, OSError) as error:
-        parser.exit(1, f"Preparation stopped: {error}\n")
+        raise click.ClickException(f"Preparation stopped: {error}") from error
+
+
+if __name__ == "__main__":
+    main()

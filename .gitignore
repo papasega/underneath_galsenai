@@ -34,6 +34,7 @@ output/
 *.tflite
 *.task
 *.litertlm
+.codex/
 
 # Distribution / packaging
 .Python
@@ -202,8 +203,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-data/private/*
-!data/private/supervised_fine_tuning_galsenai.json
 output/
 checkpoints/
 AtlaSetCombined.txt
@@ -231,5 +230,16 @@ results/*sweep*
 scripts/local_sweep_commands.sh
 graphify-out/
 
-# Derived conversation snapshots remain local; only methodology/config are versioned.
-data/training_data/*/
+# Training records remain local; publish only these seeds and metadata files.
+data/training_data/*
+!data/training_data/README.md
+!data/training_data/PILOT_V2.md
+!data/training_data/assistant_seed_examples.json
+!data/training_data/collection.json
+!data/training_data/collection_v2.json
+!data/training_data/pilot_v2_summary.json
+
+# New evaluation generations stay private; publish only aggregate summaries.
+results/*.json
+!results/assistant_v4_summary.json
+!results/chat_stats.json

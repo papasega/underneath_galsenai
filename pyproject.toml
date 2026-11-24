@@ -9,14 +9,16 @@ description = "A small, modern decoder-only transformer built for on-device use.
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "click>=8.1",
     "torch>=2.5",
     "regex>=2023.0",  # used by the vendored minbpe tokenizer
     "tqdm>=4.66",  # progress bars in minbpe training
     "tiktoken>=0.7",  # imported by minbpe/__init__.py (GPT4Tokenizer)
-    "pyyaml>=6",  # training config files (config_nanochat.yml)
+    "pyyaml>=6",  # training config files (config/pilotv1_config/config_nanochat.yml)
 ]
 
 [project.optional-dependencies]
+hf-train = ["transformers>=5.18,<6", "peft>=0.22,<1", "accelerate>=1.1,<2"]
 rag = ["sentence-transformers>=6.1", "transformers>=5.18"]  # embeddinggemma-2 retrieval (webapp/rag.py)
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
 

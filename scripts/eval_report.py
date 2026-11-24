@@ -14,7 +14,7 @@ RAG_NOTE = {
 }
 NOTES = {
     "gemma-base": "Gemma 4 E2B (4-bit QAT), no fine-tuning",
-    "gemma-lora": "+ LoRA r8, 16 layers, 5 epochs (config_gemma.yml)",
+    "gemma-lora": "+ LoRA r8, 16 layers, 5 epochs (config/pilotv1_config/config_gemma.yml)",
     "gemma-lora-1ep": "+ LoRA, checkpoint after epoch 1 (lowest val loss)",
     "galsenai-sft": "nanochat-style 12M model, base on chat text + SFT",
     "galsenai-sft-only": "same model, SFT only (no raw-chat pre-training)",
@@ -30,7 +30,7 @@ for f in sorted(ROOT.glob("results/gemma-full-*.json")) + [ROOT / "results/gemma
         NOTES[n] = (
             "Gemma 4 E2B bf16, no fine-tuning (fair base for the full models)" if n == "gemma-base-bf16"
             else (f"bf16 base + {pct[1]} % full fine-tuned weights, {100 - int(pct[1])} % base" if pct
-                  else "full fine-tuning (top blocks, config_gemma_full.yml)")
+                  else "full fine-tuning (top blocks, config/pilotv1_config/config_gemma_full.yml)")
             + (f" + RAG: {RAG_NOTE[rag[1]]}" if rag else "")
         )
 res = {
@@ -47,8 +47,9 @@ cols = [
 ]
 n = next(iter(res.values()))["metrics"]["n_turns"]
 out = [
+    "> Historical v1 results. Current assistant experiments: [v4 comparison](assistant_v4_compare.md).\n",
     "# Evaluation: Gemma 4 E2B vs galsenai\n",
-    f"{n} held-out validation turns, greedy decoding. Regenerate with `scripts/run_eval.sh`.\n",
+    f"{n} held-out validation turns, greedy decoding. Regenerate this historical report with `scripts/eval_report.py`.\n",
     "| Model | " + " | ".join(c[1] for c in cols) + " | What it is |",
     "|---|" + "---|" * len(cols) + "---|",
 ]
