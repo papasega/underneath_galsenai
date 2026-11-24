@@ -29,11 +29,30 @@ def test_eval_refuses_overwrite_before_loading_model(tmp_path):
 
 def comparison(tmp_path):
     for name in ("base", "v2", "v3"):
-        result = dict(name=name, settings={"thinking": False}, metrics=dict.fromkeys(
-            ("bits_per_byte", "rouge_l", "token_f1", "distinct_2", "empty_rate",
-             "truncated_rate", "narrative_marker_rate"), 0.5), samples=[{
-                 "prompt_sha256": "abc", "ref": "R", "pred": name,
-                 "history": [{"role": "user", "content": "Q, avec virgule"}]}])
+        result = dict(
+            name=name,
+            settings={"thinking": False},
+            metrics=dict.fromkeys(
+                (
+                    "bits_per_byte",
+                    "rouge_l",
+                    "token_f1",
+                    "distinct_2",
+                    "empty_rate",
+                    "truncated_rate",
+                    "narrative_marker_rate",
+                ),
+                0.5,
+            ),
+            samples=[
+                {
+                    "prompt_sha256": "abc",
+                    "ref": "R",
+                    "pred": name,
+                    "history": [{"role": "user", "content": "Q, avec virgule"}],
+                }
+            ],
+        )
         (tmp_path / f"{name}.json").write_text(json.dumps(result))
 
 

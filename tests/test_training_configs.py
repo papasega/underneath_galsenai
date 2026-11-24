@@ -22,7 +22,7 @@ def test_wrapper_respects_config_cadence_and_derives_iterations(tmp_path):
     scripts.mkdir()
     dataset = tmp_path / "data"
     dataset.mkdir()
-    (dataset / "train.jsonl").write_text('{}\n' * 7)
+    (dataset / "train.jsonl").write_text("{}\n" * 7)
     config = tmp_path / "config"
     config.mkdir(parents=True)
     (config / "dataset_notice.txt").write_text((ROOT / "config/dataset_notice.txt").read_text())
@@ -30,9 +30,11 @@ def test_wrapper_respects_config_cadence_and_derives_iterations(tmp_path):
     text = f"epochs: 1\nbatch_size: 2\ndata: {dataset}\n"
     cfg.write_text(text + "steps_per_eval: 2\nsave_every: 2\n")
     wrapper = scripts / "train_lora.sh"
-    wrapper.write_text((ROOT / "scripts/train_lora.sh").read_text().replace(
-        '~/.local/bin/mlx_lm.lora --config "$CONFIG" "$@"',
-        'printf "ARG:%s\\n" --config "$CONFIG" "$@"'))
+    wrapper.write_text(
+        (ROOT / "scripts/train_lora.sh")
+        .read_text()
+        .replace('~/.local/bin/mlx_lm.lora --config "$CONFIG" "$@"', 'printf "ARG:%s\\n" --config "$CONFIG" "$@"')
+    )
     result = subprocess.run(["bash", str(wrapper)], capture_output=True, text=True, check=True)
     assert "iters=4 (4 per epoch)" in result.stdout
     assert "example data only" in result.stderr
@@ -84,11 +86,15 @@ def test_tokenizer_can_use_only_training_messages(tmp_path, monkeypatch):
     monkeypatch.setattr(train_tokenizer, "ROOT", tmp_path)
     monkeypatch.setattr(train_tokenizer, "RegexTokenizer", Tokenizer)
     monkeypatch.setattr(train_tokenizer, "chat_messages", reject_raw_corpus)
-    (tmp_path / "train.jsonl").write_text(json.dumps({"messages": [
-        {"role": "user", "content": "Question"}, {"role": "assistant", "content": "Answer"}]}))
+    (tmp_path / "train.jsonl").write_text(
+        json.dumps({"messages": [{"role": "user", "content": "Question"}, {"role": "assistant", "content": "Answer"}]})
+    )
     config = tmp_path / "tokenizer.yml"
-    config.write_text(yaml.safe_dump({"tokenizer": {
-        "corpus": None, "sft_train": "train.jsonl", "vocab_size": 20, "out_prefix": "tok/model"}}))
+    config.write_text(
+        yaml.safe_dump(
+            {"tokenizer": {"corpus": None, "sft_train": "train.jsonl", "vocab_size": 20, "out_prefix": "tok/model"}}
+        )
+    )
     result = CliRunner().invoke(train_tokenizer.main, ["--config", str(config)])
     assert result.exit_code == 0, result.output
     assert seen["text"].strip() == "Question\nAnswer"

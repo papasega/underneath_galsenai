@@ -179,8 +179,11 @@ def train_sft(cfg: Cfg, tok: RegexTokenizer, device: str) -> None:
 
 
 @click.command()
-@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path),
-              default=ROOT / "config/pilotv1_config/config_nanochat.yml")
+@click.option(
+    "--config",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=ROOT / "config/pilotv1_config/config_nanochat.yml",
+)
 @click.option("--stage", type=click.Choice(["base", "sft"]), required=True)
 @click.option("--set", "overrides", multiple=True, help="Repeat for each override, e.g. --set sft.epochs=3")
 def main(config: Path, stage: str, overrides: tuple[str, ...]) -> int:

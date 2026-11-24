@@ -14,16 +14,19 @@ def test_assistant_snapshot_filters_whole_rows_and_preserves_splits(tmp_path):
     source = tmp_path / "v2"
     source.mkdir()
     hashes = {}
-    for split, questions in (("train", ["Comment tester ?", "Que dit un membre ?"]),
-                             ("valid", ["Comment valider ?"])):
-        rows = [{"uid": f"{split}:{i}", "component_id": split, "theme": "testing",
-                 "type": "complementary",
-                 "messages": [{"role": "user", "content": q},
-                              {"role": "assistant", "content": "Écris un test ciblé."}]}
-                for i, q in enumerate(questions)]
+    for split, questions in (("train", ["Comment tester ?", "Que dit un membre ?"]), ("valid", ["Comment valider ?"])):
+        rows = [
+            {
+                "uid": f"{split}:{i}",
+                "component_id": split,
+                "theme": "testing",
+                "type": "complementary",
+                "messages": [{"role": "user", "content": q}, {"role": "assistant", "content": "Écris un test ciblé."}],
+            }
+            for i, q in enumerate(questions)
+        ]
         (source / f"{split}.metadata.json").write_bytes(encode(rows))
-        (source / f"{split}.jsonl").write_text("".join(
-            json.dumps({"messages": r["messages"]}) + "\n" for r in rows))
+        (source / f"{split}.jsonl").write_text("".join(json.dumps({"messages": r["messages"]}) + "\n" for r in rows))
         for suffix in ("jsonl", "metadata.json"):
             name = f"{split}.{suffix}"
             hashes[name] = digest((source / name).read_bytes())
@@ -69,9 +72,13 @@ def test_serve_rejects_missing_selected_adapter_before_starting_server(tmp_path)
     import os
 
     root = Path(__file__).resolve().parents[1]
-    result = subprocess.run(["bash", str(root / "scripts/serve.sh")],
-                            env={**os.environ, "ADAPTER": str(tmp_path / "missing")},
-                            capture_output=True, text=True, timeout=10)
+    result = subprocess.run(
+        ["bash", str(root / "scripts/serve.sh")],
+        env={**os.environ, "ADAPTER": str(tmp_path / "missing")},
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
     assert result.returncode == 1
     assert "Missing adapter file" in result.stderr
     assert "pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0" in (root / "scripts/serve.sh").read_text()

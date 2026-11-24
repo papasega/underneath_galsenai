@@ -12,21 +12,35 @@ def inputs(tmp_path):
     source.mkdir()
     hashes = {}
     for split in ("train", "valid"):
-        row = {"uid": f"sft_llm_general_100.json:{split}", "component_id": split,
-               "messages": [{"role": "system", "content": "system"},
-                            {"role": "user", "content": split},
-                            {"role": "assistant", "content": "old"}]}
-        for suffix, raw in (("metadata.json", encode([row])),
-                            ("jsonl", (json.dumps({"messages": row["messages"]}) + "\n").encode())):
+        row = {
+            "uid": f"sft_llm_general_100.json:{split}",
+            "component_id": split,
+            "messages": [
+                {"role": "system", "content": "system"},
+                {"role": "user", "content": split},
+                {"role": "assistant", "content": "old"},
+            ],
+        }
+        for suffix, raw in (
+            ("metadata.json", encode([row])),
+            ("jsonl", (json.dumps({"messages": row["messages"]}) + "\n").encode()),
+        ):
             name = f"{split}.{suffix}"
             (source / name).write_bytes(raw)
             hashes[name] = digest(raw)
     (source / "manifest.json").write_bytes(encode({"files_sha256": hashes}))
     review = tmp_path / "delivery"
     (review / "dataset_candidate").mkdir(parents=True)
-    (review / "dataset_candidate/sft_llm_general.json").write_bytes(encode([{
-        "id": "train", "messages": [{"role": "user", "content": "train"},
-                                     {"role": "assistant", "content": "new"}]}]))
+    (review / "dataset_candidate/sft_llm_general.json").write_bytes(
+        encode(
+            [
+                {
+                    "id": "train",
+                    "messages": [{"role": "user", "content": "train"}, {"role": "assistant", "content": "new"}],
+                }
+            ]
+        )
+    )
     with (review / "dataset_corrections_log.csv").open("w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["file", "id", "old_answer", "corrected_answer"])
@@ -34,9 +48,10 @@ def inputs(tmp_path):
         writer.writerow(["sft_llm_general.json", "absent", "old", "new"])
     csv_path = tmp_path / "review_corrected.csv"
     csv_path.write_text("question\nvalid\n")
-    manifest = {"files": {str(p.relative_to(review)): digest(p.read_bytes())
-                           for p in review.rglob("*") if p.is_file()},
-                "review_corrected_sha256": digest(csv_path.read_bytes())}
+    manifest = {
+        "files": {str(p.relative_to(review)): digest(p.read_bytes()) for p in review.rglob("*") if p.is_file()},
+        "review_corrected_sha256": digest(csv_path.read_bytes()),
+    }
     (review / "manifest.json").write_bytes(encode(manifest))
     return source, review, tmp_path / "v4"
 
