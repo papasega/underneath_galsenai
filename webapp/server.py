@@ -25,6 +25,7 @@ import rag  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = Path(__file__).parent / "static"
 BASE = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1").rstrip("/")
+GOOGLE_BASE = os.environ.get("GOOGLE_BASE_URL", "http://localhost:8002/v1").rstrip("/")
 DEFAULT_SYSTEM = (ROOT / "config/assistant_system.txt").read_text(encoding="utf-8").strip()
 SYSTEM = os.environ.get("SYSTEM_PROMPT", DEFAULT_SYSTEM)  # SYSTEM_PROMPT="" disables it; applied to Gemma only
 NANO_CKPT = Path(os.environ.get("NANOCHAT_CHECKPOINT", ROOT / "data/private/checkpoints/galsenai_sft.pt"))
@@ -36,12 +37,12 @@ _nano: dict = {}
 _nano_lock = threading.Lock()
 
 
-def upstream(path: str, body: dict | None = None):
+def upstream(path: str, body: dict | None = None, *, google: bool = False):
     headers = {"Content-Type": "application/json"}
     if key := os.environ.get("API_KEY"):
         headers["Authorization"] = f"Bearer {key}"
     data = json.dumps(body).encode() if body is not None else None
-    return urllib.request.urlopen(urllib.request.Request(BASE + path, data, headers), timeout=300)
+    return urllib.request.urlopen(urllib.request.Request((GOOGLE_BASE if google else BASE) + path, data, headers), timeout=300)
 
 
 def upstream_model() -> str:
@@ -51,14 +52,17 @@ def upstream_model() -> str:
         return json.load(r)["data"][0]["id"]
 
 
-def gemma_info() -> dict:
+def gemma_info(google: bool = False) -> dict:
     """Name shown in the UI. mlx_lm.server calls its preloaded model "default_model": show the real one instead."""
     try:
-        real = upstream_model()
-        detail = os.environ.get("ACTIVE_MODEL") or (real if real != "default_model" else "modèle actif")
-        return {"id": "gemma", "name": "galsenai-gemma", "detail": detail, "available": True}
+        real = "default_model" if google else upstream_model()
+        if google:
+            with upstream("/models", google=True) as response:
+                json.load(response)
+        detail = os.environ.get("GOOGLE_ACTIVE_MODEL" if google else "ACTIVE_MODEL") or (real if real != "default_model" else "modèle actif")
+        return {"id": "google" if google else "gemma", "name": "galsenai-google" if google else "galsenai-gemma", "detail": detail, "available": True}
     except (urllib.error.URLError, OSError, KeyError, IndexError):
-        return {"id": "gemma", "name": "galsenai-gemma", "detail": f"serveur injoignable ({BASE})", "available": False}
+        return {"id": "google" if google else "gemma", "name": "galsenai-google" if google else "galsenai-gemma", "detail": f"serveur injoignable ({BASE})", "available": False}
 
 
 def full_models() -> dict[str, Path]:
@@ -123,7 +127,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/api/config":
-            models = [gemma_info(), *({"id": n, "name": n, "available": True,
+            models = [gemma_info(), gemma_info(True), *({"id": n, "name": n, "available": True,
                                       "detail": "Gemma 4 E2B, poids complets (chargé à la demande par mlx_lm.server)"}
                                      for n in full_models()), nanochat_info()]
             default = next((m["id"] for m in models if m["available"]), "gemma")
@@ -151,7 +155,7 @@ class Handler(BaseHTTPRequestHandler):
             messages = req["messages"]
             assert isinstance(messages, list) and messages
             which = req.get("model", "gemma")
-            assert which in ("gemma", "nanochat", *full_models())
+            assert which in ("gemma", "google", "nanochat", *full_models())
             max_tokens = min(int(req.get("max_tokens", 512)), 2048)
             temperature = float(req.get("temperature", 0.7))
             method = req.get("rag", "off")
@@ -190,11 +194,11 @@ class Handler(BaseHTTPRequestHandler):
                     messages = [*messages[:-1], {**messages[-1], "content": rag.build_prompt(messages[-1]["content"], sources)}]
             if SYSTEM and messages[0].get("role") != "system":
                 messages = [{"role": "system", "content": SYSTEM}, *messages]
-            body = {"model": str(full_models()[which]) if which != "gemma" else upstream_model(), "messages": messages, "stream": True,
+            body = {"model": ("default_model" if which == "google" else upstream_model()) if which in ("gemma", "google") else str(full_models()[which]), "messages": messages, "stream": True,
                     "max_tokens": max_tokens, "temperature": temperature,
                     "chat_template_kwargs": {"enable_thinking": False},
                     "repetition_penalty": 1.1}  # the small fine-tuned model can loop ("syntaxe syntaxe ..."); vLLM and mlx_lm accept it
-            with upstream("/chat/completions", body) as r:
+            with upstream("/chat/completions", body, google=which == "google") as r:
                 self._sse_start()
                 if method != "off":
                     self.wfile.write(b"data: " + json.dumps({"sources": sources}).encode() + b"\n\n")

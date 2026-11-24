@@ -14,6 +14,10 @@ Gemma 4 E2B fine-tuning with a compact, nanochat-style transformer trained from
 scratch. It includes MLX training on Apple Silicon, Transformers/PEFT training on
 CUDA or CPU, evaluation tools and a webchat.
 
+<p align="center">
+  <img src="assets/galsenai_chat.png" alt="GlasenAI Chat Assistant" width="640">
+</p>
+
 ## Pipeline
 
 ```mermaid
