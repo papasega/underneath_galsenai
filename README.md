@@ -16,19 +16,23 @@ CUDA or CPU, evaluation tools and a webchat.
 
 ## Pipeline
 
-```text
-Supplied chat export -> prepare_data_galesnai.py -> anonymize_chat.py -> RAG corpus
-Supplied SFT batches -> prepare_training_data.py -> assistant/review preparation
-                                                       |
-                                +----------------------+------------------+
-                                v                                         v
-                      train_lora.sh / train_lora_hf.py       train_tokenizer.py
-                                |                              -> galsenai.train
-                                v                                         v
-                           Gemma + LoRA                         galsenai (nanochat)
-                                +----------------------+------------------+
-                                                       v
-                                             Evaluation / webchat
+```mermaid
+flowchart TD
+    chat["Supplied chat export"] --> prepareChat["prepare_data_galesnai.py"]
+    prepareChat --> anonymize["anonymize_chat.py"]
+    anonymize --> corpus["RAG corpus"]
+
+    batches["Supplied SFT batches"] --> prepareSFT["prepare_training_data.py"]
+    prepareSFT --> assistant["Assistant / review preparation"]
+    assistant --> lora["train_lora.sh / train_lora_hf.py"]
+    lora --> gemma["Gemma + LoRA"]
+    prepareSFT --> tokenizer["train_tokenizer.py"]
+    tokenizer --> trainNano["galsenai.train"]
+    trainNano --> nano["galsenai (nanochat)"]
+
+    gemma --> evaluation["Evaluation / webchat"]
+    nano --> evaluation
+    corpus -. "Optional retrieval" .-> evaluation
 ```
 
 The public example JSON can be converted separately with
