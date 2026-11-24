@@ -207,6 +207,8 @@ checkpoints/
 AtlaSetCombined.txt
 # Local-only notes
 RESOURCES.md
+/commit-git.sh
+/merge-push-git.sh
 
 # Report: only the compiled PDF is versioned; the LaTeX sources stay local
 report/*.tex
