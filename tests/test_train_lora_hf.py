@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+from types import SimpleNamespace
 
 import click
 import pytest
@@ -49,7 +50,9 @@ def test_rejects_truncation_and_malformed_or_empty_data(tmp_path):
             train_lora_hf.encode_split(path, Tokenizer(), 200)
 
 
-def test_preflight_prints_notice_and_never_overwrites(tmp_path):
+@pytest.mark.parametrize("python_version", [(3, 10), (3, 12)])
+def test_preflight_prints_notice_and_never_overwrites(tmp_path, monkeypatch, python_version):
+    monkeypatch.setattr(train_lora_hf, "sys", SimpleNamespace(version_info=python_version))
     output = tmp_path / "output"
     output.mkdir()
     sentinel = output / "keep"
@@ -66,6 +69,17 @@ def test_preflight_prints_notice_and_never_overwrites(tmp_path):
     assert result.exit_code != 0
     assert "Request dataset access first" in result.output
     assert not (tmp_path / "new").exists()
+
+
+def test_preflight_rejects_old_python_before_training(tmp_path, monkeypatch):
+    monkeypatch.setattr(train_lora_hf, "sys", SimpleNamespace(version_info=(3, 10)))
+    for split in ("train", "valid"):
+        write_split(tmp_path / f"{split}.jsonl", MESSAGES)
+    output = tmp_path / "new"
+    result = CliRunner().invoke(train_lora_hf.main, ["--output", str(output), "--data", str(tmp_path)])
+    assert result.exit_code != 0
+    assert "HF training requires Python 3.11 or newer" in result.output
+    assert not output.exists()
 
 
 @pytest.mark.skipif(

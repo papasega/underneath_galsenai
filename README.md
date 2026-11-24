@@ -3,192 +3,37 @@
 ### Unlocking the Knowledge Hidden in Conversations
 
 **From Conversations to Collective Intelligence**
-
 *Turning WhatsApp Q&A Discussions into a Searchable Knowledge Base.*
 
 <p align="center">
   <img src="assets/wordcloud.png" alt="Word cloud of the anonymized chat, in the shape of Senegal" width="640">
 </p>
 
-Turn the GalsenAI "Questions/Réponses" WhatsApp discussion into a small French chat assistant, and compare two ways
-of getting there on one laptop (Apple M5 Pro, 24 GB):
-
-1. **Fine-tune Gemma 4 E2B** with LoRA (MLX on Apple Silicon, or Transformers/PEFT on Linux with CUDA/CPU).
-2. **Train `galsenai`**, a compact nanochat-style decoder-only transformer (12M parameters) from scratch, in this repo.
-
-The historical experiments used 68 training conversations and 8 held-out conversations.
-Current assistant training uses the versioned snapshot below.
-
-## Selected inference model
-
-The current local inference model is **Google Gemma 4 E2B IT + v4 LoRA, step 799**,
-selected for local testing. This choice does not establish superiority over QAT;
-see [Google vs QAT results](results/google_vs_qat.md).
-Start the inference server and webchat with `./scripts/serve.sh`, then open
-http://127.0.0.1:8080. The inference API listens on port 8001. Ctrl-C stops both.
-The adapter must already be available locally; weights and private snapshots are not in Git.
-
-The earlier matched 114-question QAT comparison gives v4 step 400 BPB **0.6939**, ROUGE-L **0.1765**
-and token F1 **0.2777**, versus v3 **0.6950 / 0.1662 / 0.2731**. V4 has one narrative
-flag and no truncated answers. These are modest development gains, not proof of factual
-superiority. See [the experiment report](results/assistant_v4_compare.md) and
-[aggregate metrics and hashes](results/assistant_v4_summary.json).
-
-## Assistant training (current)
-
-The current Gemma LoRA configuration is `config/config_gemma.yml`.
-It uses `data/training_data/pilot_v4_assistant` (799 train, 114 validation),
-one epoch (400 steps), rank 8 and learning rate 5e-5. New adapters go to
-`data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0`.
-The v2/v3 snapshots and adapters remain unchanged. V4 replaces eight training answers
-using the reviewed correction delivery; two other logged corrections were absent from
-the filtered v3 train and are not reintroduced. Questions, system prompt, groups, row
-order and the complete validation files are preserved. No corrected evaluation answers
-are added to training. `audit.json` records applied and absent UIDs; `manifest.json`
-records input/output hashes. The 153 historical candidates are not a new training set.
-This is a targeted correction experiment, not a comprehensive quality fix.
-
-```bash
-.venv/bin/python -m data.prepare_review_data  # local review delivery required; identical rerun is a no-op
-./scripts/train_lora.sh
-# Historical v1 training, when its data is available:
-CONFIG=config/pilotv1_config/config_gemma.yml ./scripts/train_lora.sh
-```
-
-The assistant snapshot keeps the original train/validation assignments. It excludes
-415 train / 43 validation `chat_grounded` examples whose excerpts were absent, and
-58 train / 10 validation examples with context-dependent language. It does not strip
-words out of answers or claim to have rewritten all 1,600 conversations. An audit
-records every excluded UID and reason. Six explicit training examples cover agents,
-fine-tuning, GalsenAI, assistant identity, unknown events and loss interpretation.
-The GalsenAI description was checked against https://galsen.ai/a-propos/ on 2026-11-23.
-These synthetic seeds and the filter still require human quality review.
-
-`config/assistant_system.txt` is shared by training data and the webchat. The webchat
-disables thinking to preserve the response budget; `SYSTEM_PROMPT` can still override
-its system instruction. RAG reports insufficient excerpts without claiming that the
-group never discussed a topic. Restart the webchat to apply these changes.
-
-The configuration evaluates and saves every 50 steps. The builder never reads or
-exports the v2 test. New seeds have not been audited for semantic overlap with it;
-do not claim a clean final benchmark until that exposure audit is done. The 3 debugging
-questions used to create the seeds are now training examples, not evaluation items.
-Validation loss on this filtered split is not directly comparable to v2 loss.
-`scripts/run_eval.sh` still compares base/v2/v3 on assistant validation (commands below);
-it does not evaluate v4. The completed v3/v4 checkpoint comparison is documented in
-`results/assistant_v4_compare.md`. The webchat now loads Google + v4 step 799 by default.
-Other historical evaluation wrappers still use v1 defaults. Do not start another run in the same output directory if its
-adapters must be retained; choose a separate `--adapter-path`.
-See `data/training_data/PILOT_V2.md` for the data protocol. All three original training
-configurations are archived in `config/pilotv1_config/`. The following sections describe
-the historical experiments.
-
-## Linux / Unix training (without MLX)
-
-The training and evaluation entry points print an English dataset notice. The public
-`supervised_fine_tuning_galsenai.json` is an example subset, not the complete experiment
-data. Request the complete datasets from the GalsenAI community through this repository
-(for example, a GitHub issue). A Hugging Face dataset release is planned. The scripts
-do not download private data or silently substitute the public examples.
-
-For Gemma, use `scripts/train_lora_hf.py`. It uses
-[Transformers](https://huggingface.co/docs/transformers/model_doc/gemma4) and
-[PEFT LoRA](https://huggingface.co/docs/peft/package_reference/lora), with no MLX dependency.
-Run these commands from the repository root with Python 3.10 or newer:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-# First install the PyTorch build matching your CUDA driver using the selector linked below.
-python -m pip install -e '.[hf-train]'
-nvidia-smi
-python -c 'import torch; print("CUDA:", torch.cuda.is_available())'
-hf auth login  # if model access requires authentication; accept its license on Hugging Face first
-
-# Short end-to-end check. Requires the complete local train.jsonl and valid.jsonl snapshot.
-CUDA_VISIBLE_DEVICES=0 python scripts/train_lora_hf.py \
-  --model google/gemma-4-E2B-it \
-  --device cuda \
-  --data data/training_data/pilot_v4_assistant \
-  --max-steps 1 \
-  --output data/private/adapters/hf/gemma4_v4_smoke1
-
-# One epoch. Always choose a new output directory for each run.
-CUDA_VISIBLE_DEVICES=0 python scripts/train_lora_hf.py \
-  --model google/gemma-4-E2B-it \
-  --device cuda \
-  --data data/training_data/pilot_v4_assistant \
-  --epochs 1 \
-  --batch-size 1 \
-  --gradient-accumulation 2 \
-  --learning-rate 5e-5 \
-  --rank 8 \
-  --max-length 2048 \
-  --output data/private/adapters/hf/gemma4_v4_run1
-```
-
-These CUDA commands require an NVIDIA GPU; they do not run on a Mac GPU.
-Choose the CUDA or CPU wheel with the official [PyTorch installation selector](https://pytorch.org/get-started/locally/).
-Without an NVIDIA GPU, pass `--device cpu`; this uses float32 and is very slow for Gemma.
-`--device auto` selects CUDA when available, otherwise CPU. CUDA uses bfloat16 when
-supported, otherwise float16. This is single-process training; expose one GPU as above.
-The default model is `google/gemma-4-E2B-it`, using ordinary floating-point weights,
-not the MLX 4-bit checkpoint. It needs more memory; no 4-bit QLoRA or CPU offloading is
-implemented. Reduce `--batch-size` (default 1), or choose a smaller compatible
-`--model` and its `--target-modules` if memory is insufficient.
-
-The script trains on assistant tokens only, preserves each JSONL conversation's
-system/history, disables thinking, and rejects overlength examples instead of silently
-truncating their answers. Defaults: one epoch, rank 8, alpha 16, q/v projections on
-all layers, learning rate 5e-5, batch size 1 with accumulation 2, maximum 2,048 tokens.
-Every epoch evaluates validation loss and saves a checkpoint. Final adapters,
-tokenizer, Trainer logs/checkpoints and `training_provenance.json` (input hashes,
-arguments and library versions) go to the new `--output` directory. Keep it under
-`data/private/adapters/` to exclude it from Git.
-
-This is a separate training recipe, not an exact reproduction of the MLX experiments
-(different weight precision, LoRA scaling and layer selection). PEFT adapters cannot
-be passed directly to the MLX webchat. Existing `train_lora.sh`, `run_eval.sh`,
-`run_eval_rag.sh`, `run_full.sh`, and `eval_gemma.py` remain MLX-specific. The HF trainer
-reports validation loss, but does not run their generated-answer benchmark.
-
-The **nanochat-style `galsenai` model already supports CUDA, MPS and CPU** through
-PyTorch, in that priority order, for both training and `eval_galsenai.py`. No separate
-Linux implementation is needed. With the historical private corpus and JSONL splits
-available at the paths in `config/pilotv1_config/config_nanochat.yml`:
-
-```bash
-python scripts/train_tokenizer.py --config config/pilotv1_config/config_nanochat.yml
-python -m galsenai.train --config config/pilotv1_config/config_nanochat.yml --stage base
-python -m galsenai.train --config config/pilotv1_config/config_nanochat.yml --stage sft
-python scripts/eval_galsenai.py --name galsenai-sft-linux \
-  --checkpoint data/private/checkpoints/galsenai_sft.pt \
-  --out results/local/galsenai-sft-linux.json
-```
-
-These are the historical nanochat paths, not the current Gemma v4 snapshot. Raw-chat pretraining exposes source material
-behind validation answers; do not describe this as a clean held-out benchmark. The
-alternative `config/config_nanochat.yml` runs v2 SFT from scratch without a raw corpus:
-use it for tokenizer training and `--stage sft`, and use its tokenizer/checkpoint/data
-paths explicitly when evaluating. CPU tokenization is platform independent. RAG
-retrieval and report scripts also run without MLX, but answer evaluation still needs
-a compatible inference server; the provided Gemma server uses MLX.
+A French chat assistant built from GalsenAI discussions. The project compares
+Gemma 4 E2B fine-tuning with a compact, nanochat-style transformer trained from
+scratch. It includes MLX training on Apple Silicon, Transformers/PEFT training on
+CUDA or CPU, evaluation tools and a webchat.
 
 ## Pipeline
 
-```
-WhatsApp export ──► prepare_data_galesnai.py (system lines out, phone numbers → keyed hash)
-                └─► anonymize_chat.py (random sender labels, names/links/numbers removed, dates → month)
-examples (data/private/supervised_fine_tuning_galsenai.json, 100 conversations)
-   └─► prepare_sft_mlx.py ──► train.jsonl (92) / valid.jsonl (8)
-         ├─► train_lora.sh        Gemma 4 E2B + LoRA            (config/pilotv1_config/config_gemma.yml)
-         └─► train_tokenizer.py → galsenai.train base → sft     (config/pilotv1_config/config_nanochat.yml)
-                                  └─► run_eval.sh ──► results/local/assistant-eval-*/
-                                  └─► webapp/  chat UI on any OpenAI-compatible server (vLLM, mlx_lm.server)
+```text
+Supplied chat export -> prepare_data_galesnai.py -> anonymize_chat.py -> RAG corpus
+Supplied SFT batches -> prepare_training_data.py -> assistant/review preparation
+                                                       |
+                                +----------------------+------------------+
+                                v                                         v
+                      train_lora.sh / train_lora_hf.py       train_tokenizer.py
+                                |                              -> galsenai.train
+                                v                                         v
+                           Gemma + LoRA                         galsenai (nanochat)
+                                +----------------------+------------------+
+                                                       v
+                                             Evaluation / webchat
 ```
 
-Data format: a JSON list of records with a `messages` list of `{"role": "user" | "assistant", "content": ...}` turns and provenance fields. See [Data access and schema](#data-access-and-schema). The converter also accepts legacy message lists.
+The public example JSON can be converted separately with
+[prepare_sft_mlx.py](scripts/prepare_sft_mlx.py). Complete experiment inputs are
+available on request from the GalsenAI community.
 
 ## Install
 
@@ -199,353 +44,159 @@ uv run --no-sync ruff check src tests data/prepare_data_galesnai.py
 uv run --no-sync mypy
 ```
 
-On Apple Silicon, use Python 3.12 or newer and install the locked MLX environment:
+For MLX training and inference on Apple Silicon, use Python 3.12 or newer:
 
 ```bash
 uv sync --locked --python 3.12 --extra dev --extra mlx
 ```
 
-The `mlx` extra pins mlx-lm 0.32.2, mlx 0.32.4 and Transformers 5.24.0.
-Training, evaluation and serving use `.venv/bin/python`; set `MLXPY` to override it.
-The HF training extra requires Python 3.11 or newer. The Linux uv lock selects CPU
-PyTorch for CI. For CUDA, install a wheel matching your GPU driver with pip before
-`python -m pip install -e '.[hf-train]'`, as in the CUDA recipe above. This CUDA
-wheel selection is separate from the CPU lock; record `pip freeze` with each run.
+Scripts use `.venv/bin/python`; `MLXPY` can select another project environment.
 
-## Fine-tune Gemma 4 E2B (LoRA)
+[Linux / Unix training, CUDA and CPU setup](scripts/LINUX_TRAINING.md) (HF training requires Python 3.11+).
 
-All hyper-parameters, including the number of **epochs**, are in `config/pilotv1_config/config_gemma.yml`; `train_lora.sh` turns `epochs`
-into `--iters` (mlx-lm only knows iterations) and evaluates and saves once per epoch.
+## Data
 
-```bash
-python3 scripts/prepare_sft_mlx.py      # example split: 92 train / 8 valid; choose --output if the directory already exists
-CONFIG=config/pilotv1_config/config_gemma.yml ./scripts/train_lora.sh
-```
+The [public example JSON](data/private/supervised_fine_tuning_galsenai.json)
+contains 100 conversations. **Complete datasets and trained adapters are available
+on request by contacting the GalsenAI community through this repository, for
+example by opening a GitHub issue.** Publication on Hugging Face is planned.
 
-Settings that fit 24 GB: LoRA rank 8 on the top 16 layers, batch 2, gradient checkpointing (needed: without it rank 64
-with batch 8 runs out of Metal memory). Rank 32 on all layers at learning rate 1e-4 **diverged** (validation loss
-3.7 → 6.6), so it is not the default. Validation loss is lowest after **epoch 1** and rises afterwards (overfitting on
-68 conversations), so 1–2 epochs is the safer choice than the 5 in the file.
-
-## The `galsenai` model (nanochat style)
-
-A small decoder-only transformer: RMSNorm, RoPE, grouped-query attention, SwiGLU, KV cache, optional sliding-window
-layers, LoRA. `ModelConfig.nanochat(vocab_size, ...)` switches on the parts of
-[nanochat](https://github.com/karpathy/nanochat)'s GPT: relu² MLP, QK-norm, parameter-free RMSNorm, untied embeddings,
-logit soft-cap 15, RoPE base 1e5, SSSL sliding windows, per-layer residual/x0 lambdas. Not ported: value embeddings,
-smear gate, FP8, flash-attention, the Muon optimizer (AdamW is used). The chat format is nanochat's (`<|bos|>`,
-`<|user_start|>`, `<|assistant_start|>`, ...; loss on assistant tokens only).
-
-```bash
-python3 scripts/anonymize_chat.py CHAT.txt data/private/chat_anonymized.txt   # corpus for tokenizer and base stage
-python3 scripts/train_tokenizer.py                                            # BPE 2048 + 5 chat specials
-python -m galsenai.train --stage base                                         # next-token on chat text
-python -m galsenai.train --stage sft                                          # assistant tokens only
-python -m galsenai.chat --checkpoint data/private/checkpoints/galsenai_sft.pt \
-                        --tokenizer data/private/galsenai_tok/galsenai.model
-```
-
-Config and epochs: `config/pilotv1_config/config_nanochat.yml` (override with `--set sft.epochs=3`). Pre-training on the raw chat gives the
-model its vocabulary but also lets it see the source of the validation answers (see the evaluation caveats).
-
-```python
-import torch
-from galsenai import GPT, ModelConfig, generate
-
-model = GPT(ModelConfig.nanochat(vocab_size=2053, n_layer=6, n_head=6, n_embd=384))
-tokens = generate(model, torch.tensor([[1, 2, 3]]), max_new_tokens=20, temperature=0.8, top_k=50)
-```
-
-| Choice | Why |
-|---|---|
-| RoPE, no learned positions | Relative positions; no table tied to the training length |
-| Grouped-query attention (`n_kv_head`) | KV cache shrinks by `n_head / n_kv_head` (the nanochat preset uses full MHA) |
-| Sliding-window layers (`sliding_window`, `global_every`) | Bounded attention cost, interleaved with global layers as in Gemma 3 |
-| No biases, KV-cache decoding | Fewer parameters; one new token costs O(1) projections |
-
-The structure follows [nanoGPT](https://github.com/karpathy/nanoGPT) (deprecated upstream in favour of nanochat).
-
-## Evaluation
-
-`./scripts/run_eval.sh` compares the quantized base, v2 LoRA and v3 assistant LoRA on
-all 114 turns in `pilot_v3_assistant/valid.jsonl`. Every model uses the shared system
-prompt, thinking disabled, temperature 0, repetition penalty 1.1 and a 512-token budget.
-RAG is disabled here to isolate the fine-tuning effect. Both adapter directories must exist.
-
-```bash
-LIMIT=2 ./scripts/run_eval.sh  # smoke check, 2 turns per model
-./scripts/run_eval.sh         # complete validation comparison
-```
-
-Each invocation prints its new `results/local/assistant-eval-*/` directory. It contains
-`base.json`, `v2.json`, `v3.json`, `comparison.md` and `review.csv` for side-by-side manual
-review. Results include data/prompt/adapter hashes, truncation and narrative marker rates.
-Existing outputs are never overwritten. `MLXPY` can select the Python environment containing
-mlx-lm (default: `.venv/bin/python`). Close the webchat model server before running
-the comparison to free memory. These are development results, not a clean final test.
-ROUGE/F1 measure word overlap; narrative markers are review flags, not correctness judgments.
-
-The table below is historical: 10 v1 validation turns, different prompts and thinking enabled.
-Its scores are not directly comparable to the assistant comparison above.
-
-| Model | Params | BPB ↓ | PPL/token ↓ | ROUGE-L ↑ | Token F1 ↑ | Distinct-2 ↑ | Len ratio | Empty |
-|---|---|---|---|---|---|---|---|---|
-| Gemma 4 E2B, no fine-tuning | 4629M | 1.130 | 30.6 | 0.082 | 0.144 | 0.86 | 8.37 | 0% |
-| Gemma 4 E2B + LoRA, 5 epochs | 4629M | 1.378 | 65.0 | 0.150 | 0.244 | 0.98 | 0.80 | 0% |
-| Gemma 4 E2B + LoRA, epoch 1 | 4629M | **0.854** | **13.3** | **0.196** | **0.272** | 0.69 | 0.99 | 0% |
-| galsenai 12M, base + SFT | 12M | 1.825 | 65.5 | 0.149 | 0.191 | 0.76 | 0.47 | 0% |
-| galsenai 12M, SFT only | 12M | 2.279 | 185.1 | 0.124 | 0.152 | 0.82 | 0.38 | 0% |
-
-How to read it:
-- **BPB** (bits per byte of the reference answer) and **PPL/token** score the reference answer under the model. BPB is
-  comparable across tokenizers, PPL/token is not.
-- **ROUGE-L / Token F1** measure word overlap with the reference. Low absolute values are normal: the references are
-  paraphrases of chat opinions.
-- **Distinct-2** is the share of unique word bigrams (low means repetition loops). **Len ratio** is generated words
-  over reference words: base Gemma is 8x too long, `galsenai` is about half as long as the reference.
-- Gemma LoRA at 5 epochs is worse than the untuned model on BPB (1.38 vs 1.13): overfitting. Epoch 1 is the best row on
-  every quality metric.
-
-Caveats: 10 turns from 8 conversations, so only large gaps mean something. `galsenai` base + SFT saw the raw chat the
-validation answers come from (optimistic); "SFT only" is the leak-free row. Gemma answers with its thinking mode on
-(same template as training) and the thought block is stripped before scoring.
-
-## Full fine-tuning and model merging (local)
-
-`config/pilotv1_config/config_gemma_full.yml` trains the real weights of the top 16 blocks of the bf16 `google/gemma-4-E2B-it` (Adafactor, lr 2e-5);
-LoRA instead trains small adapters on the 4-bit model. Everything is driven by `scripts/run_full.sh`:
-
-```
-./scripts/run_full.sh train                 # add flags to override, e.g. --learning-rate 1e-5 --num-layers -1
-./scripts/run_full.sh fuse                  # -> data/private/models/gemma4-full-ft
-./scripts/run_full.sh merge 20 40 60 80     # base + full weights: gemma4-full-merge-w<pct> (pct = % of the fine-tuned model)
-./scripts/run_full.sh eval                  # validation metrics for every gemma4-full-* model + the bf16 base
-```
-
-Every `data/private/models/gemma4-full-*` directory (including the `merge-w<pct>` ones) shows up in the chat app's model picker.
-Outputs (`results/*full*`, `results/*merge*`, `data/private/`) are git-ignored. Useful variants: `./scripts/run_full.sh ckpt STEP`
-(checkpoint at iteration STEP), `FULL=ep1 ./scripts/run_full.sh merge 40 60` (merge a specific fused model).
-
-Outcome (10 validation turns, table in `results/eval_compare.md`, per-model details in `results/gemma-full-*.json`): full
-fine-tuning (BPB 1.083, val loss 3.42 vs 2.66 for LoRA) overfits after 1 epoch, and training all blocks diverges. Merging with
-the base helps: `merge-w40` BPB 0.864, `merge-w60` ROUGE-L 0.163 / F1 0.235. None beats `gemma-lora-1ep` (BPB 0.854,
-ROUGE-L 0.196, F1 0.272), so LoRA stays the served model. Knowledge retention is not measured by these metrics.
-
-## RAG (retrieval over the anonymized chat)
-
-`webapp/rag.py` indexes `data/private/chat_anonymized_v2_rag.txt` (windows of 4 messages) with BM25, `google/embeddinggemma-2`
-(text only, `pip install -e .[rag]`) or both (reciprocal rank fusion). The chat app has a RAG selector; passages are injected
-in the last user turn and shown under the answer. `scripts/rag_contexts.py` scores retrieval (hit@k, MRR, context recall, chunk
-sizes), `scripts/run_eval_rag.sh` evaluates Gemma + RAG on the validation turns, `scripts/eval_rag.py` runs hand-written questions.
-Dense cache filenames include the indexed content hash, so old v1 vectors are not reused.
-`RAG_CHAT` can override the corpus path. Restart the webchat to load the selected corpus.
-The RAG evaluation wrappers remain historical v1 workflows, separate from `run_eval.sh`;
-their results go to `results/local/` and `results/eval_compare.md`.
-
-## Chat web app
-
-`webapp/` is a minimal chat UI (GalsenAI logo and colours: green top bar and footer, white conversation area, left
-panel listing the group's themes; a click sends a natural question to the model) with a model picker (`galsenai-gemma`: any OpenAI-compatible server; `galsenai-nanochat`: the 12M checkpoint, generated in-process) and ChatGPT-style rendered Markdown answers. vLLM needs a GPU machine; on the Mac
-`./scripts/serve.sh` starts `mlx_lm.server` with the selected LoRA adapter and the web app together (Ctrl-C stops both):
-
-The default model is `google/gemma-4-E2B-it`, with the MLX LoRA adapter
-`data/private/adapters/pilot_v4_assistant/google_gemma4_rank8_run1` (step 799).
-**The trained adapter weights are not included in Git. They will be published on
-Hugging Face by the maintainer; no download URL is available yet.** Until then,
-request the adapter or train it locally. Place `adapter_config.json` and
-`adapters.safetensors` in the directory above before starting the default server.
-Set `MODEL` and `ADAPTER` together to serve a different model/adapter pair;
-the active model and adapter directory are shown in the UI. To return to QAT:
-
-```bash
-MODEL=mlx-community/gemma-4-E2B-it-qat-4bit \
-ADAPTER=data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0 \
-./scripts/serve.sh
-```
-
-The script exits if adapter files are missing. Use `ADAPTER=none ./scripts/serve.sh`
-when you explicitly want the base model. Thinking is disabled in webchat requests;
-the UI temperature remains configurable, while evaluations used temperature 0.
-
-```bash
-./scripts/serve.sh                      # then open http://127.0.0.1:8080
-# GPU machine instead
-vllm serve google/gemma-4-E2B-it --port 8000
-VLLM_BASE_URL=http://HOST:8000/v1 .venv/bin/python webapp/server.py
-```
-
-With `mlx_lm.server` the request model name must be `default_model` to use the preloaded model and its adapter (`serve.sh`
-sets it and passes the real name to the UI via `ACTIVE_MODEL`); any other name loads that model without the adapter.
-
-Optional environment variables: `MODEL`, `MODEL_REVISION` (immutable SHA for a custom Hub model), `MLXPY`, `SYSTEM_PROMPT`, `API_KEY`. Standard library only.
-
-## Report
-
-The discussion statistics (themes, top voices, word cloud) are in [`results/STATISTICS.md`](results/STATISTICS.md).
-
-`report/rapport_galsenai_underneath.pdf` is the only report file in the repository (3 pages, French: cover with a map of
-Senegal and the GalsenAI logo, what was built, results, discussion statistics). Its LaTeX sources (`report/*.tex`, `assets/`) are **kept local and git-ignored**; `senegal.tex` is generated by
-`scripts/make_senegal_map.py` and `stats_data.tex` by `scripts/chat_figures.py`.
-
-Rebuild: `python3 scripts/make_senegal_map.py`, `uv run --no-project --with wordcloud python scripts/chat_figures.py`,
-then `cd report && latexmk -xelatex main.tex`.
-
-## Tests
-
-`tests/` checks properties, not implementation: causality, KV-cache equals full forward (including the nanochat
-variant), sliding-window receptive field, RoPE relative-position invariance, parameter count, loss masking,
-memorization of a short sequence, sampling filters, checkpoint round trip, LoRA identity at initialization, the chat
-format and assistant-only mask, and the anonymizer.
+- [Data access and schema](dataset/README.md#data-access-and-schema).
+- [Data preparation and privacy](dataset/README.md#data-preparation-and-privacy).
+- [Dataset versions and split protocol](data/training_data/PILOT_V2.md).
 
 ## Data preparation and privacy
 
-- `data/prepare_data_galesnai.py` removes WhatsApp system lines and replaces every phone number with an HMAC-SHA256
-  token (`TEL_ab12cd34`) under a secret local key. The key and the token-to-number table live in `data/private/` and
-  never leave the machine. Display names are **not** anonymized by this step.
-- `scripts/anonymize_chat.py` is the step before sharing text. Two layers of protection exist and they are not the
-  same thing: pseudonymization (the `TEL_` tokens, reversible by whoever holds the key) and anonymization (this script,
-  where nothing is kept that links back to a person).
+| Information | Treatment |
+|---|---|
+| Phone numbers | HMAC pseudonyms during preparation; number-like text masked during anonymization |
+| Senders and quoted sender names | Random labels; sender mapping is not saved |
+| Links, emails and mentions | Replaced with placeholders |
+| Dates and times | Reduced to year-month |
+| Other names and identifying details | Manual review and optional `--redact-words` list |
 
-  | In the text | Treatment |
-  |---|---|
-  | Sender (display name or `TEL_` token) | Random label `U01`, `U02`, ... drawn fresh each run; **the mapping is never written** |
-  | The same names or `TEL_` tokens quoted inside messages | Same label as the sender, so threads stay readable |
-  | Links, e-mails, `@mentions`, phone-like numbers | `[lien]`, `[email]`, `[mention]`, `[numero]` |
-  | Date and time | Year-month only |
-  | Other people's names in free text, extra identifying details | **Not detected**: pass them with `--redact-words` |
+Pseudonymization alone does not anonymize the chat. Review identifying details and
+source permissions before sharing. See the
+[privacy and preparation guide](dataset/README.md#data-preparation-and-privacy).
 
-  Dropping the mapping table makes re-identification harder but does not make the data anonymous: in a community of
-  about 100 members, an opinion, a job or a writing style can identify someone. Before sharing outside the group,
-  proofread a sample, remove very personal messages, and get the administrators' consent. Under GDPR, data that is
-  only pseudonymized is still personal data. This is not legal advice.
+## Assistant training (current)
 
-  ```bash
-  python3 scripts/anonymize_chat.py data/whatsapp_questions_reponses/CHAT.txt data/private/chat_anonymized.txt
-  python3 scripts/anonymize_chat.py CHAT.txt OUT.txt --redact-words names.txt   # one word or name per line
-  ```
-
-  The anonymized file is also the corpus the `galsenai` tokenizer and base stage train on.
-- Raw exports, media, backups, trained adapters and checkpoints are git-ignored. Model outputs in `results/` quote the
-  chat: do not publish them from a public repository without review.
+[config_gemma.yml](config/config_gemma.yml) configures QAT Gemma LoRA training.
+It requires the complete assistant dataset described above.
 
 ```bash
-python data/prepare_data_galesnai.py --dry-run   # count only
-python data/prepare_data_galesnai.py             # backup, filter, pseudonymize
+./scripts/train_lora.sh
 ```
 
-## Roadmap
+Entry points: [MLX training](scripts/train_lora.sh), [CUDA/CPU training](scripts/train_lora_hf.py),
+[evaluation](scripts/eval_gemma.py). See [training and evaluation details](scripts/TRAINING.md)
+and [reproducing the experiments](scripts/REPRODUCIBILITY.md).
 
-1. Pick the Gemma epoch count on a larger validation set, and add more conversations (the public 100-example file is only a sample).
-2. Export: weight quantization (int8/int4), then LiteRT or GGUF, with an accuracy check against the PyTorch model.
-3. Measure on-device memory and tokens/second on a real phone.
+## Chat web app
+
+[serve.sh](scripts/serve.sh) starts the MLX inference API on port 8001 and the
+webchat at http://127.0.0.1:8080. Ctrl-C stops both.
+
+The configured model is **Google Gemma 4 E2B IT + v4 LoRA, step 799**. Its adapter
+is available on request from the GalsenAI community and will be published on
+Hugging Face. Once the adapter is installed at the configured path:
+
+```bash
+./scripts/serve.sh
+```
+
+To use the Google model without the unpublished adapter:
+
+```bash
+ADAPTER=none ./scripts/serve.sh
+```
+
+Google model access may require accepting its license and authenticating with
+`hf auth login`. Set `MODEL` and `ADAPTER` together for another model/adapter pair.
+The webchat disables thinking and uses the shared
+[assistant system prompt](config/assistant_system.txt).
+
+## The `galsenai` model (nanochat style)
+
+[galsenai](src/galsenai) is a compact decoder-only transformer trained from scratch,
+with about **12M parameters** in the experimental configuration: 6 layers,
+6 attention heads and embedding width 384. PyTorch selects CUDA, MPS or CPU.
+
+The model supports RoPE, grouped-query attention, sliding windows and KV caching.
+Its nanochat preset uses a ReLU² MLP, QK normalization, parameter-free RMSNorm,
+untied embeddings, logit soft-capping and per-layer residual/embedding scales.
+SFT computes loss only on assistant tokens; training uses AdamW.
+
+With the requested dataset installed, train the tokenizer and run v2 SFT from
+random initialization using the published configuration:
+
+```bash
+uv run --no-sync python scripts/train_tokenizer.py --config config/config_nanochat.yml
+uv run --no-sync python -m galsenai.train --config config/config_nanochat.yml --stage sft
+```
+
+See [training details](scripts/TRAINING.md#other-workflows),
+[model configuration](src/galsenai/config.py) and the historical results below.
+
+## Retrieval and other workflows
+
+- [RAG](webapp/rag.py) supports BM25, dense retrieval and hybrid fusion. Supply
+  your own corpus through `RAG_CHAT`; dense retrieval requires the `rag` extra.
+- [Full fine-tuning and merging](scripts/run_full.sh) and
+  [RAG evaluation](scripts/run_eval_rag.sh) are separate historical workflows.
+  Their prerequisites are described in the [training guide](scripts/TRAINING.md).
+
+## Results
+
+The current comparison uses **114 development questions**, temperature 0, thinking
+disabled, a 512-token output budget and no RAG. Lower BPB/perplexity is better;
+higher ROUGE-L and token F1 indicate greater reference overlap.
+
+| Model | BPB ↓ | Perplexity ↓ | ROUGE-L ↑ | Token F1 ↑ | Truncated |
+|---|---|---|---|---|---|
+| QAT 4-bit + v4, step 400 | 0.6939 | 9.5195 | **0.1765** | **0.2777** | 0/114 |
+| Google original, no LoRA | 2.0165 | 698.0617 | 0.0741 | 0.1187 | 105/114 |
+| Google + v4, step 550 | 0.6980 | 9.6456 | 0.1675 | 0.2714 | 0/114 |
+| Google + v4, step 799 | **0.6811** | **9.1308** | 0.1709 | 0.2697 | 0/114 |
+
+Google step 799 lowers reference perplexity by 4.1% versus QAT, while QAT retains
+higher lexical overlap. Google step 799 is the webchat default. These one-seed
+development results do not establish factual superiority or isolate quantization's
+effect; the unadapted model's high truncation rate also limits interpretation.
+[Protocol and limitations](results/google_vs_qat.md).
+
+Historical nanochat comparison, **10 validation turns under a different protocol**:
+
+| Model | BPB ↓ | ROUGE-L ↑ | Token F1 ↑ |
+|---|---|---|---|
+| Gemma + LoRA, epoch 1 | 0.854 | 0.196 | 0.272 |
+| galsenai 12M, chat pretraining + SFT | 1.825 | 0.149 | 0.191 |
+| galsenai 12M, SFT only | 2.279 | 0.124 | 0.152 |
+
+The small model trails pretrained Gemma. Chat pretraining exposed source material
+behind validation answers, so that row is optimistic. These historical scores are
+not directly comparable to the 114-question evaluation.
+[Full historical evaluation](results/eval_compare.md).
+
+Further details: [assistant v4 comparison](results/assistant_v4_compare.md),
+[aggregate metrics](results/assistant_v4_summary.json),
+[discussion statistics](results/STATISTICS.md) and the
+[French report](report/rapport_galsenai_underneath.pdf).
+
+## Checks
+
+```bash
+uv run --no-sync pytest -q
+uv run --no-sync ruff check src tests data/prepare_data_galesnai.py
+uv run --no-sync ruff format --check src tests data/prepare_data_galesnai.py
+uv run --no-sync mypy
+```
+
+Tests cover model behavior, loss masking, training preflight, retrieval caches,
+data preparation and anonymization. GPU-specific behavior requires the matching
+hardware.
 
 ## Attribution
 
-`minbpe/` is Andrej Karpathy's tokenizer (MIT, see `minbpe/LICENSE`). The model structure follows nanoGPT and nanochat
-(Karpathy, MIT). The course notebooks in `legacy/` come from Imad Saddik's "Train your language model" course; check
-its license before redistributing any course material.
-
-## Data access and schema
-
-The published example dataset is
-[`data/private/supervised_fine_tuning_galsenai.json`](data/private/supervised_fine_tuning_galsenai.json),
-with **100 conversations** (89 `complementary`, 11 `chat_grounded`). The directory name
-is historical: this specific file is intentionally public. It is not the complete
-corpus used to train v4, and its publication does not certify every answer.
-
-Each JSON record contains:
-
-| Field | Meaning |
-|---|---|
-| `id` | Example identifier within the source file |
-| `type` | Example category, such as `complementary` or `chat_grounded` |
-| `group_id` | Group of related examples, used to keep related records together |
-| `source_lines` | Source references, including `{file, start, end}` ranges when available |
-| `external_sources` | External references, when available |
-| `messages` | Ordered conversation turns with `role` and `content` |
-
-Source references do not include the underlying private conversations. Some grounded
-examples need those excerpts to be useful; they must not be treated as standalone
-assistant training targets without checking their context.
-
-The generated batches and full training/validation/test datasets are **not published
-in this Git repository**. For access, contact the maintainer through this repository
-(for example, open a GitHub issue). A Hugging Face dataset release is planned soon;
-no download URL is announced yet.
-
-Public preparation material in `data/training_data/` consists of:
-
-- `assistant_seed_examples.json`: six explicit examples with `id`, `theme`, `question`
-  and `answer`; optional `source` and `checked_on` document a factual check.
-- `collection.json` and `collection_v2.json`: collection seed, source filenames and
-  themes, collection targets, and optional split method/ratios. Targets are not counts
-  of delivered examples.
-- `pilot_v2_summary.json`: historical split/theme/type counts and SHA-256 fingerprints,
-  without conversations. Source labels use `../filename.json`; original hash values
-  are preserved, even when local source files have since been corrected.
-- `PILOT_V2.md`: differences between the public dataset, historical pilots and current
-  assistant snapshots, plus preparation and evaluation limitations.
-
-The `../filename.json` source labels are portable identifiers. Supply the real local
-source directory using `--source-dir PATH` or `GALSENAI_SOURCE_DIR`; they do not expose
-its private location. For example, with the source files available locally:
-
-```bash
-.venv/bin/python -m data.prepare_training_data \
-  --config data/training_data/collection_v2.json \
-  --source-dir /path/to/source-files \
-  --output data/training_data/new_snapshot
-```
-
-Use a new output directory. Existing v2/v3/v4 snapshots remain frozen; the source-label
-change does not rewrite their manifests or make current corrected inputs identical to
-historical inputs.
-
-## Git contents
-
-Commit code, configuration, tests, methodology, aggregate experiment summaries, the
-public dataset above, and the explicitly listed preparation files. Keep all other
-`data/private/` content (including generated batches), `data/legacy/`, `data/backups/`,
-training snapshots, adapters, checkpoints, correction deliveries and `results/local/`
-out of Git. The `.gitignore` explicitly permits the public dataset and preparation
-files. Do not run the previously suggested `git rm --cached` on the public dataset.
-New top-level evaluation JSON files are ignored except `results/assistant_v4_summary.json`
-and `results/chat_stats.json`. Ignore rules do not remove already tracked files.
-
-## Reproducing the experiments
-
-A Git clone contains code and 100 public example conversations, not the complete
-training snapshots, human corrections or trained adapters. Request the complete
-inputs from the GalsenAI community through a GitHub issue. Dataset and adapter
-releases on Hugging Face are planned. The public example converter demonstrates
-the format; it cannot recreate the reported v4 experiments.
-
-For a private handoff, create an archive of the frozen snapshots, generated sources,
-review corrections and detailed evaluation outputs, excluding weights:
-
-```bash
-uv run --no-sync python scripts/archive_reproduction.py --output data/backups/reproduction_v1
-```
-
-The command refuses an existing destination. Keep both `inputs.tar.gz` and
-`manifest.json` in durable private storage outside this machine. The manifest lists
-SHA-256 hashes for every archived file and the archive itself. Restore the
-repository-relative archive paths into the matching checkout, without replacing
-newer work. Preserve each snapshot's own `manifest.json`; do not regenerate frozen
-splits from subsequently corrected source files. Model weights must be stored and
-released separately. Record the Git commit (`git rev-parse HEAD`) with the archive.
-
-`config/model_revisions.json` pins the Google and QAT Hub commits captured from the
-local cache at project closure. The MLX training/server/fuse launcher downloads
-those snapshots before invoking MLX, whose CLIs do not expose `--revision`.
-MLX evaluation and HF training use the same pins. For another Hub model, supply
-`--revision` with its 40-character commit SHA. Local model directories remain
-supported, and must be archived separately. Access to gated Google weights may
-require accepting the model license and authenticating with `hf auth login`.
-
-New training runs record model revision, data hashes and dependency versions in
-`training_provenance.json`; evaluations record the model revision in their settings.
-Historical runs did not capture all versions or model revisions, so these closure
-pins cannot establish their exact historical environment. Existing aggregate
-results remain historical observations. Fixed seeds and identical inputs do not
-guarantee bit-for-bit agreement across MLX, CUDA and CPU hardware.
+[minbpe](minbpe/) is Andrej Karpathy's tokenizer, distributed under its
+[MIT license](minbpe/LICENSE). The model structure follows nanoGPT and nanochat.

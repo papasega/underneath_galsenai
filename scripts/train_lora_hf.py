@@ -85,8 +85,6 @@ def main(
     max_steps,
 ):
     click.secho((ROOT / "config/dataset_notice.txt").read_text().strip(), fg="green", err=True)
-    if sys.version_info < (3, 11):
-        raise click.ClickException("HF training requires Python 3.11 or newer.")
     if output.exists():
         raise click.ClickException(f"Output already exists: {output}. Choose a new directory.")
     paths = [data / f"{split}.jsonl" for split in ("train", "valid")]
@@ -96,6 +94,8 @@ def main(
     modules = [name.strip() for name in target_modules.split(",") if name.strip()]
     if not modules:
         raise click.ClickException("--target-modules must contain at least one module name")
+    if sys.version_info < (3, 11):
+        raise click.ClickException("HF training requires Python 3.11 or newer.")
     try:
         import torch
         from peft import LoraConfig, get_peft_model
