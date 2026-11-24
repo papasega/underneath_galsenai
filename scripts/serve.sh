@@ -4,8 +4,8 @@
 # `vllm serve MODEL --port 8000` and run `VLLM_BASE_URL=http://HOST:8000/v1 .venv/bin/python webapp/server.py`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-MODEL=${MODEL:-mlx-community/gemma-4-E2B-it-qat-4bit}
-ADAPTER=${ADAPTER:-data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0}
+MODEL=${MODEL:-google/gemma-4-E2B-it}
+ADAPTER=${ADAPTER:-data/private/adapters/pilot_v4_assistant/google_gemma4_rank8_run1}
 IPORT=${IPORT:-8001}; WPORT=${WPORT:-8080}
 args=(--model "$MODEL" --port "$IPORT")
 label="$MODEL"
