@@ -1,6 +1,6 @@
 """Base pre-training and SFT in the nanochat recipe.
 
-    python -m galsenai.train --config config_nanochat.yml --stage sft
+    python -m galsenai.train --config config/pilotv1_config/config_nanochat.yml --stage sft
 
 ``base`` learns next-token prediction on chat text; ``sft`` trains on conversations with the loss on assistant
 tokens only. AdamW with warmup + cosine decay, grad clipping, float32 (MPS/CUDA/CPU).
@@ -9,7 +9,6 @@ nanochat's Muon optimizer is not ported.
 
 from __future__ import annotations
 
-import argparse
 import json
 import math
 import random
@@ -19,6 +18,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import click
 import torch
 import yaml
 
@@ -177,14 +177,14 @@ def train_sft(cfg: Cfg, tok: RegexTokenizer, device: str) -> None:
     fit(model, batch, steps, steps_per_epoch, hp, evaluate, ROOT / hp["out"])
 
 
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", type=Path, default=Path("config_nanochat.yml"))
-    ap.add_argument("--stage", choices=["base", "sft"], required=True)
-    ap.add_argument("--set", nargs="*", default=[], metavar="a.b=v", help="override config values, e.g. sft.epochs=3")
-    args = ap.parse_args(argv)
-    cfg = yaml.safe_load(args.config.read_text())
-    for item in args.set:
+@click.command()
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path),
+              default=ROOT / "config/pilotv1_config/config_nanochat.yml")
+@click.option("--stage", type=click.Choice(["base", "sft"]), required=True)
+@click.option("--set", "overrides", multiple=True, help="Repeat for each override, e.g. --set sft.epochs=3")
+def main(config: Path, stage: str, overrides: tuple[str, ...]) -> int:
+    cfg = yaml.safe_load(config.read_text())
+    for item in overrides:
         key, value = item.split("=", 1)
         *path, last = key.split(".")
         node = cfg
@@ -193,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         node[last] = yaml.safe_load(value)
     torch.manual_seed(cfg["seed"])
     tok = load_tokenizer(ROOT / (cfg["tokenizer"]["out_prefix"] + ".model"))
-    (train_base if args.stage == "base" else train_sft)(cfg, tok, pick_device())
+    (train_base if stage == "base" else train_sft)(cfg, tok, pick_device())
     return 0
 
 

@@ -71,6 +71,30 @@ def test_query_from_adds_previous_turn_for_one_word_questions():
     assert rag.query_from(h[:1]) == "parlons de Haskell"
 
 
+def test_dense_cache_distinguishes_same_size_corpora(tmp_path, monkeypatch):
+    import numpy as np
+
+    class Embedder:
+        calls = 0
+
+        def encode(self, texts, **kwargs):
+            self.calls += 1
+            return np.array([[self.calls]], dtype=float)
+
+    embedder = Embedder()
+    monkeypatch.setattr(rag, "CACHE", tmp_path)
+    monkeypatch.setattr(rag, "_embedder", lambda: embedder)
+    monkeypatch.setattr(rag, "_state", {"passages": [{"text": "old corpus"}]})
+    assert rag._doc_vectors()[0, 0] == 1
+    monkeypatch.setattr(rag, "_state", {"passages": [{"text": "new corpus"}]})
+    assert rag._doc_vectors()[0, 0] == 2
+    monkeypatch.setattr(rag, "_state", {"passages": [{"text": "old corpus"}]})
+    assert rag._doc_vectors()[0, 0] == 1
+    assert embedder.calls == 2
+
+
 def test_build_prompt_numbers_passages_and_keeps_the_question():
     p = rag.build_prompt("Quoi ?", [{"month": "2026-04", "text": "a"}, {"month": "2026-05", "text": "b"}])
     assert "[1] (2026-04)\na" in p and "[2] (2026-05)\nb" in p and "Question : Quoi ?" in p
+    assert "ces extraits ne suffisent pas" in p
+    assert "dis que le groupe n'en a pas parlé" not in p

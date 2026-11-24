@@ -25,13 +25,7 @@ import rag  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = Path(__file__).parent / "static"
 BASE = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1").rstrip("/")
-DEFAULT_SYSTEM = (
-    "Tu es l'assistant de la communauté GalsenAI. Tu réponds en français, de façon claire et concise, aux questions "
-    "liées aux thématiques du groupe de discussion : modèles de langage (LLM), agents et outils, entraînement et "
-    "fine-tuning, NLP et langues locales (wolof), Python et développement, maths et recherche, infrastructure et GPU, "
-    "carrière et études en IA, événements et communauté au Sénégal. Appuie-toi sur ce qui a été discuté dans le "
-    "groupe ; si tu n'es pas sûr ou si l'information peut être périmée, dis-le au lieu d'inventer."
-)
+DEFAULT_SYSTEM = (ROOT / "config/assistant_system.txt").read_text(encoding="utf-8").strip()
 SYSTEM = os.environ.get("SYSTEM_PROMPT", DEFAULT_SYSTEM)  # SYSTEM_PROMPT="" disables it; applied to Gemma only
 NANO_CKPT = Path(os.environ.get("NANOCHAT_CHECKPOINT", ROOT / "data/private/checkpoints/galsenai_sft.pt"))
 NANO_TOK = Path(os.environ.get("NANOCHAT_TOKENIZER", ROOT / "data/private/galsenai_tok/galsenai.model"))
@@ -198,6 +192,7 @@ class Handler(BaseHTTPRequestHandler):
                 messages = [{"role": "system", "content": SYSTEM}, *messages]
             body = {"model": str(full_models()[which]) if which != "gemma" else upstream_model(), "messages": messages, "stream": True,
                     "max_tokens": max_tokens, "temperature": temperature,
+                    "chat_template_kwargs": {"enable_thinking": False},
                     "repetition_penalty": 1.1}  # the small fine-tuned model can loop ("syntaxe syntaxe ..."); vLLM and mlx_lm accept it
             with upstream("/chat/completions", body) as r:
                 self._sse_start()

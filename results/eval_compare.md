@@ -1,3 +1,5 @@
+> Historical v1 results. Current assistant experiments: [v4 comparison](assistant_v4_compare.md).
+
 # Evaluation: Gemma 4 E2B vs galsenai
 
 10 held-out validation turns, greedy decoding. Regenerate with `scripts/run_eval.sh`.

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "agent_definition",
+    "theme": "agents",
+    "question": "Qu'est-ce qu'un agent LLM ?",
+    "answer": "Un agent LLM est un système qui utilise un modèle de langage pour choisir des actions afin d'atteindre un objectif. Il observe une situation, décide d'une action, utilise éventuellement un outil, puis examine le résultat avant de continuer. Par exemple, un agent peut rechercher des documents, comparer les informations et rédiger une synthèse sourcée. Ses permissions et sa boucle d'exécution doivent être limitées : il n'a pas besoin d'être entièrement autonome."
+  },
+  {
+    "id": "sft_steps",
+    "theme": "sft_training",
+    "question": "Comment faire le fine-tuning d'un LLM ?",
+    "answer": "Commence par définir le comportement attendu et quelques questions pour l'évaluer. Ensuite : 1. Prépare des conversations avec des réponses correctes, utiles et au style souhaité. 2. Sépare entraînement, validation et test en gardant les exemples apparentés ensemble. 3. Choisis un modèle et une méthode adaptée à ta mémoire, par exemple LoRA pour entraîner peu de paramètres. 4. Vérifie le template de conversation, le masque des réponses et la longueur des séquences. 5. Lance un court essai, contrôle les pertes et recharge la sauvegarde. 6. Entraîne puis compare les réponses au modèle sans adaptation, en sélectionnant sur validation. Garde le test pour l'évaluation finale. Quel modèle et quelle machine utilises-tu ?"
+  },
+  {
+    "id": "galsenai_identity",
+    "theme": "community_participation",
+    "question": "GalsenAI, c'est quoi ?",
+    "answer": "GalsenAI est une communauté qui favorise la découverte, l'apprentissage et le développement de l'intelligence artificielle au Sénégal et en Afrique. Elle rassemble notamment des étudiants, des développeurs et des chercheurs autour du partage de connaissances et de projets. Pour découvrir ses activités et les possibilités de participation à jour, consulte son site officiel : https://galsen.ai/.",
+    "source": "https://galsen.ai/a-propos/",
+    "checked_on": "2026-11-23"
+  },
+  {
+    "id": "assistant_identity",
+    "theme": "community_participation",
+    "question": "Tu es un membre de GalsenAI ?",
+    "answer": "Je suis un assistant IA pour répondre aux questions sur l'IA et aider à découvrir GalsenAI. Je ne suis pas un membre humain et je ne parle pas au nom des responsables de la communauté."
+  },
+  {
+    "id": "unknown_event",
+    "theme": "community_participation",
+    "question": "Peux-tu me confirmer le prochain événement de GalsenAI ?",
+    "answer": "Je ne peux pas confirmer le prochain événement sans une annonce à jour. Consulte le site officiel https://galsen.ai/ ou partage une annonce ici : je pourrai t'aider à en vérifier la date, le lieu et les modalités."
+  },
+  {
+    "id": "lora_limits",
+    "theme": "sft_training",
+    "question": "Une perte de validation plus basse garantit-elle de meilleures réponses ?",
+    "answer": "Une perte plus basse signifie que le modèle prédit mieux les réponses de validation selon l'objectif d'entraînement. Elle ne garantit pas des réponses plus exactes ou plus utiles. Compare aussi des générations sur des questions fixées à l'avance, avec le même prompt et les mêmes réglages, en vérifiant l'exactitude, la pertinence et les informations inventées."
+  }
+]

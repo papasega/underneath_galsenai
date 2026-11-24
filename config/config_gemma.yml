@@ -1,0 +1,21 @@
+# Reviewed assistant pilot, rank 8, seed 0. Prepare with python -m data.prepare_review_data.
+# scripts/train_lora.sh derives iterations from the frozen dataset size.
+epochs: 1
+model: mlx-community/gemma-4-E2B-it-qat-4bit
+train: true
+data: data/training_data/pilot_v4_assistant
+adapter_path: data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0
+fine_tune_type: lora
+mask_prompt: true
+seed: 0
+batch_size: 2
+learning_rate: 5.0e-5
+max_seq_length: 2048
+num_layers: 16
+grad_checkpoint: true
+steps_per_eval: 50
+save_every: 50
+lora_parameters:
+  rank: 8
+  scale: 20.0
+  dropout: 0.0

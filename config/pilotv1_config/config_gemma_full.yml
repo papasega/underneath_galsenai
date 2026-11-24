@@ -1,5 +1,5 @@
 # Full fine-tuning of Gemma 4 E2B (mlx-lm). Run: ./scripts/run_full.sh train   (see scripts/run_full.sh for the whole chain)
-# Differences from config_gemma.yml (LoRA): bf16 base (a 4-bit model cannot be trained in full), real weights are updated
+# Differences from config/pilotv1_config/config_gemma.yml (LoRA): bf16 base (a 4-bit model cannot be trained in full), real weights are updated
 # (no adapter), Adafactor instead of Adam (tiny optimizer state: 24 GB is enough), 10x smaller learning rate.
 # mlx-lm trains the top `num_layers` transformer blocks; embeddings (the per-layer embedding tables are ~half of the
 # 4.6B parameters) stay frozen. bf16 weights + tiny lr: if the val loss does not move at all, raise lr (updates under

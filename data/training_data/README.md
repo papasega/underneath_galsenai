@@ -1,4 +1,14 @@
+> Full training datasets are local only. The public SFT sample is
+> `data/private/supervised_fine_tuning_galsenai.json` (100 conversations).
+> For dataset differences and access before the planned Hugging Face release, see
+> [PILOT_V2.md](PILOT_V2.md) and the root README. Source entries `../filename.json`
+> require `--source-dir PATH` or `GALSENAI_SOURCE_DIR`.
+
 # GalsenAI SFT data and evaluation protocol
+
+The counts and hash-allocation policy below document **pilot v1**. For the active
+v2 data, balanced 80/10/10 allocation and current configuration locations, see
+[PILOT_V2.md](PILOT_V2.md) and `collection_v2.json`. The v1 snapshot remains unchanged.
 
 ## Scope and current status
 
@@ -23,11 +33,11 @@ historical exploratory artifacts, not clean baselines for this new test.
 From the repository root:
 
 ```sh
-python3 data/prepare_training_data.py
+python3 data/prepare_training_data.py --source-dir /path/to/source-files
 python3 -m unittest discover -s tests -p test_prepare_training_data.py
 ```
 
-The existing scripts under `scripts/` are unchanged. Inputs accept either a JSON
+This section describes the historical v1 preparation workflow. Inputs accept either a JSON
 list or an object with an `examples` list. Original data is never rewritten.
 `pilot_v1/` contains:
 

@@ -1,10 +1,11 @@
 """Retrieval over the anonymized chat: BM25 (no dependency), embeddinggemma-2 (text only), or both (RRF).
 
-Reads only data/private/chat_anonymized.txt (format `YYYY-MM | Uxx: text`, following lines continue the message).
+Reads data/private/chat_anonymized_v2_rag.txt (format `YYYY-MM | Uxx: text`, following lines continue the message).
 Dense vectors are cached in data/private/rag/ (git-ignored until the leak check is done).
 Env: RAG_CHAT, RAG_DIR, EMBED_MODEL (default google/embeddinggemma-2).
 """
 
+import hashlib
 import math
 import os
 import re
@@ -13,7 +14,7 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CHAT = Path(os.environ.get("RAG_CHAT", ROOT / "data/private/chat_anonymized.txt"))
+CHAT = Path(os.environ.get("RAG_CHAT", ROOT / "data/private/chat_anonymized_v2_rag.txt"))
 CACHE = Path(os.environ.get("RAG_DIR", ROOT / "data/private/rag"))
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "google/embeddinggemma-2")
 WINDOW, STRIDE, MAX_CHARS = 4, 2, 1200
@@ -103,7 +104,8 @@ def _doc_vectors():
 
     st = _index()
     if "vecs" not in st:
-        f = CACHE / f"emb_{EMBED_MODEL.replace('/', '_')}_w{WINDOW}s{STRIDE}_{len(st['passages'])}.npy"
+        fingerprint = hashlib.sha256("\0".join(p["text"] for p in st["passages"]).encode()).hexdigest()
+        f = CACHE / f"emb_{EMBED_MODEL.replace('/', '_')}_w{WINDOW}s{STRIDE}_{fingerprint}.npy"
         if f.exists():
             st["vecs"] = np.load(f)
         else:
@@ -160,5 +162,5 @@ def build_prompt(question: str, passages: list[dict]) -> str:
         "Consigne : réponds à la question avec tes propres mots, en 3 à 6 phrases complètes, en t'appuyant uniquement "
         "sur les extraits ci-dessus. Synthétise les points de vue, ne recopie pas les extraits. Termine chaque idée par "
         "les numéros des extraits utilisés, par exemple [1][3]. Si les extraits ne répondent pas à la question, "
-        "dis que le groupe n'en a pas parlé."
+        "dis que ces extraits ne suffisent pas à répondre, sans conclure que le groupe n'en a jamais parlé."
     )

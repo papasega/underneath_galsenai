@@ -5,11 +5,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODEL=${MODEL:-mlx-community/gemma-4-E2B-it-qat-4bit}
-ADAPTER=${ADAPTER:-data/private/adapters/gemma4_e2b_galsenai}
+ADAPTER=${ADAPTER:-data/private/adapters/pilot_v4_assistant/gemma4_e2b_lora_rank8_seed0}
 IPORT=${IPORT:-8001}; WPORT=${WPORT:-8080}
 args=(--model "$MODEL" --port "$IPORT")
 label="$MODEL"
-if [ -d "$ADAPTER" ]; then args+=(--adapter-path "$ADAPTER"); label="$MODEL + LoRA"; fi
+if [ "$ADAPTER" != "none" ]; then
+  for f in adapter_config.json adapters.safetensors; do
+    [ -f "$ADAPTER/$f" ] || { echo "Missing adapter file: $ADAPTER/$f" >&2; exit 1; }
+  done
+  args+=(--adapter-path "$ADAPTER")
+  label="$MODEL + LoRA ($(basename "$ADAPTER"))"
+fi
 ~/.local/bin/mlx_lm.server "${args[@]}" >/tmp/galsenai_mlx_server.log 2>&1 &
 INFER=$!
 trap 'kill $INFER 2>/dev/null; wait $INFER 2>/dev/null || true; echo "Serveurs arrêtés."' EXIT

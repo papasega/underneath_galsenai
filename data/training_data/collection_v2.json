@@ -20,84 +20,90 @@
   },
   "sources": [
     {
-      "path": "data/private/gemine_generate/sft_llm_general_100.json",
+      "path": "../sft_llm_general_100.json",
       "theme": "llm_fundamentals",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_ia_senegal_100.json",
+      "path": "../sft_ia_senegal_100.json",
       "theme": "ai_senegal",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_agents_ia.json",
+      "path": "../sft_100_agents_ia.json",
       "theme": "agents",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_voix_asr_tts_langues_peu_dotees.json",
+      "path": "../sft_100_voix_asr_tts_langues_peu_dotees.json",
       "theme": "voice_asr_tts",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_wolof_langues_locales_melange.json",
+      "path": "../sft_100_wolof_langues_locales_melange.json",
       "theme": "wolof_local_languages",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_donnees_annotation_corpus.json",
+      "path": "../sft_100_donnees_annotation_corpus.json",
       "theme": "corpus_data",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_deploiement_infrastructure_optimisation.json",
+      "path": "../sft_100_deploiement_infrastructure_optimisation.json",
       "theme": "deployment",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_programmation_ingenierie_logicielle_ia.json",
+      "path": "../sft_100_programmation_ingenierie_logicielle_ia.json",
       "theme": "software_engineering",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_rag_recherche_documentaire.json",
+      "path": "../sft_100_rag_recherche_documentaire.json",
       "theme": "applied_rag",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_finetuning_sft_adaptation.json",
+      "path": "../sft_100_finetuning_sft_adaptation.json",
       "theme": "sft_training",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_ia_mobile_embarquee_hors_ligne.json",
+      "path": "../sft_100_ia_mobile_embarquee_hors_ligne.json",
       "theme": "offline_mobile",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_formation_apprentissage_metiers_ia.json",
+      "path": "../sft_100_formation_apprentissage_metiers_ia.json",
       "theme": "ai_careers",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_education_pedagogie.json",
+      "path": "../sft_100_education_pedagogie.json",
       "theme": "education",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_vision_ordinateur_multimodalite.json",
+      "path": "../sft_100_vision_ordinateur_multimodalite.json",
       "theme": "vision_multimodal",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/sft_100_galsenai_participation_communaute.json",
+      "path": "../sft_100_galsenai_participation_communaute.json",
       "theme": "community_participation",
       "source_document": "chat_anonymized.txt"
     },
     {
-      "path": "data/private/gemine_generate/supervised_fine_tuning_galsenai_complete_corrige.json",
+      "path": "../supervised_fine_tuning_galsenai_complete_corrige.json",
       "theme": "galsenai_general",
       "source_document": "chat_anonymized.txt"
     }
-  ]
+  ],
+  "split_method": "balanced_grouped",
+  "split_ratios": {
+    "train": 0.8,
+    "valid": 0.1,
+    "test": 0.1
+  }
 }

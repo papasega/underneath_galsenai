@@ -1,0 +1,29 @@
+# Pilot v2: nanochat SFT from random initialization; no raw-chat pretraining.
+# .venv/bin/python scripts/train_tokenizer.py --config config/config_nanochat.yml
+# .venv/bin/python -m galsenai.train --config config/config_nanochat.yml --stage sft
+# Only --stage sft is configured. All tokenizer training text comes from train.jsonl.
+tokenizer:
+  corpus: null
+  sft_train: data/training_data/pilot_v2/train.jsonl
+  vocab_size: 2048
+  out_prefix: data/private/pilot_v2/galsenai_tok/galsenai
+
+model:
+  n_layer: 6
+  n_head: 6
+  n_embd: 384
+  block_size: 2048
+  sliding_window: 256
+  dropout: 0.0
+
+sft:
+  train: data/training_data/pilot_v2/train.jsonl
+  valid: data/training_data/pilot_v2/valid.jsonl
+  init_from: null
+  epochs: 10
+  batch_size: 4
+  learning_rate: 3.0e-4
+  warmup_steps: 5
+  out: data/private/checkpoints/pilot_v2/galsenai_sft_seed0.pt
+
+seed: 0
